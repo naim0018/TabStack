@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Stacked Bookmarks New Tab",
+  "version": "1.0.0",
+  "description": "A stackable bookmark dashboard for your new tab",
+  "permissions": [
+    "bookmarks",
+    "storage",
+    "tabs",
+    "favicon",
+    "topSites"
+  ],
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com"
+  }
+}
