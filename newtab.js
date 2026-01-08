@@ -10,6 +10,9 @@ let state = {
         sidebarCollapsed: false,
         viewMode: 'feed', 
         activeTab: 'tabs', 
+        activeBoardId: '1', // Default to Bookmarks Bar
+        activeSidebarItem: 'spaces', // Set to 'spaces' to show boards overview by default
+        boards: [{ id: '1', name: 'Bookmark' }],
         collapsedSections: ['top-sites', 'loose'], 
     },
     metadata: {} 
@@ -19,7 +22,7 @@ const ELEMENTS = {
     mainFeed: document.getElementById('main-feed'),
     sideFeed: document.getElementById('side-feed'),
     remindersShelf: document.getElementById('reminders-shelf'),
-    folderNav: document.getElementById('folder-nav'),
+    boardsNav: document.getElementById('boards-nav'),
     searchInput: document.getElementById('search-input'),
     tabCountText: document.getElementById('tab-count-text'),
     sidebar: document.getElementById('sidebar'),
@@ -37,6 +40,7 @@ const ELEMENTS = {
     viewToggleBtn: document.getElementById('view-toggle-btn'),
     createBtn: document.getElementById('create-btn'),
     addReminderBtn: document.getElementById('add-reminder-btn'),
+    createBoardBtn: document.getElementById('create-board-btn'),
     // Groups
     urlGroup: document.getElementById('url-group'),
     descGroup: document.getElementById('desc-group'),
@@ -101,12 +105,27 @@ function getTopSites() {
 }
 
 function processBookmarks(tree) {
-    const bookmarksBar = tree[0]?.children?.find(node => node.id === "1") || tree[0]; 
+    const activeBoard = String(state.settings.activeBoardId);
+    let boardNode = null;
+    
+    function findNode(nodes, id) {
+        for (const node of nodes) {
+            if (String(node.id) === id) return node;
+            if (node.children) {
+                const found = findNode(node.children, id);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    boardNode = findNode(tree, activeBoard) || findNode(tree, '1');
+    
     state.flatFolders = [];
     state.looseBookmarks = [];
 
-    if (bookmarksBar && bookmarksBar.children) {
-        bookmarksBar.children.forEach(node => {
+    if (boardNode && boardNode.children) {
+        boardNode.children.forEach(node => {
             if (node.children) state.flatFolders.push(node);
             else state.looseBookmarks.push(node);
         });
@@ -126,88 +145,224 @@ function render() {
     // Clear everything
     ELEMENTS.mainFeed.innerHTML = '';
     ELEMENTS.sideFeed.innerHTML = '';
-    ELEMENTS.folderNav.innerHTML = '';
+    ELEMENTS.boardsNav.innerHTML = '';
     ELEMENTS.remindersShelf.innerHTML = '';
     ELEMENTS.remindersShelf.classList.add('hidden');
     
     // Stats
     ELEMENTS.tabCountText.textContent = `${state.tabs.length} Tabs`;
 
-    // 1. Reminders (Special Shelf)
-    const reminders = getReminders();
-    if (reminders.length > 0) {
-        const isCollapsed = state.settings.collapsedSections.includes('reminders');
-        if (isCollapsed) ELEMENTS.remindersShelf.classList.add('collapsed');
-        else ELEMENTS.remindersShelf.classList.remove('collapsed');
-
-        ELEMENTS.remindersShelf.classList.remove('hidden');
-        
-        const header = document.createElement('div');
-        header.className = 'section-header';
-        header.style.marginBottom = isCollapsed ? '0' : '16px';
-        header.innerHTML = `
-            <div class="section-title">
-                <svg class="section-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                Active Reminders
-            </div>
-        `;
-        header.onclick = () => {
-            toggleSection('reminders', ELEMENTS.remindersShelf);
-            render();
-        };
-        ELEMENTS.remindersShelf.appendChild(header);
-        
-        if (!isCollapsed) {
-            const grid = document.createElement('div');
-            grid.className = 'reminders-grid';
-            reminders.forEach(item => grid.appendChild(createReminderNote(item)));
-            ELEMENTS.remindersShelf.appendChild(grid);
+    // 1. Reminders (Only if not in Spaces view)
+    if (state.settings.activeSidebarItem !== 'spaces') {
+        const reminders = getReminders();
+        if (reminders.length > 0) {
+            renderRemindersShelf(reminders);
         }
     }
 
-    // 2. Sidebar
-    state.flatFolders.forEach(folder => renderNavBuffer(folder));
+    // 2. Sidebar Highlights
+    updateSidebarUI();
+    state.settings.boards.forEach(board => renderBoardNavItem(board));
 
-    // 3. Side Column
-    if (state.topSites.length > 0) {
-        renderSection('Most Visited', state.topSites, 'top-sites', ELEMENTS.sideFeed);
+    // 3. Main Content
+    if (state.settings.activeSidebarItem === 'spaces') {
+        renderSpacesView();
+    } else {
+        // Render Board Stuff
+        if (state.topSites.length > 0) renderSection('Most Visited', state.topSites, 'top-sites', ELEMENTS.sideFeed);
+        if (state.looseBookmarks.length > 0) renderSection('Quick Links', state.looseBookmarks, 'loose', ELEMENTS.sideFeed);
+        
+        if (state.settings.viewMode === 'tabs') renderTabsView();
+        else renderFeedView();
     }
-    if (state.looseBookmarks.length > 0) {
-        renderSection('Quick Links', state.looseBookmarks, 'loose', ELEMENTS.sideFeed);
-    }
-    
-    // 4. Main Feed
-    if (state.settings.viewMode === 'tabs') renderTabsView();
-    else renderFeedView();
 
     addDragDropHandlers();
 }
 
-function renderNavBuffer(folder) {
+function updateSidebarUI() {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        const target = item.dataset.target;
+        item.classList.toggle('active', state.settings.activeSidebarItem === target);
+    });
+}
+
+function renderRemindersShelf(reminders) {
+    const isCollapsed = state.settings.collapsedSections.includes('reminders');
+    ELEMENTS.remindersShelf.classList.toggle('collapsed', isCollapsed);
+    ELEMENTS.remindersShelf.classList.remove('hidden');
+    
+    const header = document.createElement('div');
+    header.className = 'section-header';
+    header.style.marginBottom = isCollapsed ? '0' : '16px';
+    header.innerHTML = `
+        <div class="section-title">
+            <svg class="section-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            Active Reminders
+        </div>
+    `;
+    header.onclick = () => { toggleSection('reminders', ELEMENTS.remindersShelf); render(); };
+    ELEMENTS.remindersShelf.appendChild(header);
+    
+    if (!isCollapsed) {
+        const grid = document.createElement('div');
+        grid.className = 'reminders-grid';
+        reminders.forEach(item => grid.appendChild(createReminderNote(item)));
+        ELEMENTS.remindersShelf.appendChild(grid);
+    }
+}
+
+function renderSpacesView() {
+    const section = document.createElement('div');
+    section.className = 'section';
+    section.innerHTML = `<div class="section-header"><div class="section-title">Boards Overview</div></div>`;
+    
+    const grid = document.createElement('div');
+    grid.className = 'cards-grid';
+    grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+    
+    state.settings.boards.forEach(board => {
+        const card = document.createElement('div');
+        card.className = 'card board-card';
+        card.style.height = '120px';
+        card.style.justifyContent = 'center';
+        card.style.alignItems = 'center';
+        card.style.fontSize = '18px';
+        card.style.fontWeight = '700';
+        card.style.background = 'linear-gradient(135deg, var(--card-bg), var(--accent-glow))';
+        card.innerHTML = `
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="margin-bottom:8px">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <path d="M9 3v18"></path>
+            </svg>
+            ${board.name}
+            <div class="card-actions" style="opacity: 1; top: 12px; right: 12px;">
+                <button class="action-btn edit-btn" title="Rename">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+                ${board.id !== '1' ? `
+                <button class="action-btn delete-btn" title="Delete">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>` : ''}
+            </div>
+        `;
+        card.onclick = (e) => {
+             if (e.target.closest('.action-btn')) return;
+             state.settings.activeBoardId = board.id;
+             state.settings.activeSidebarItem = 'bookmarks';
+             saveSettings();
+             refreshData();
+        };
+
+        card.querySelector('.edit-btn').onclick = (e) => {
+            e.stopPropagation();
+            editBoard(board);
+        };
+
+        const delCardBtn = card.querySelector('.delete-btn');
+        if (delCardBtn) {
+            delCardBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteBoard(board);
+            };
+        }
+        grid.appendChild(card);
+    });
+    
+    section.appendChild(grid);
+    ELEMENTS.mainFeed.appendChild(section);
+}
+
+function renderBoardNavItem(board) {
     const item = document.createElement('button'); 
-    item.className = 'nav-item';
-    if (state.settings.viewMode === 'tabs' && state.settings.activeTab === folder.id) item.classList.add('active');
+    item.className = `nav-item ${ (state.settings.activeSidebarItem === 'bookmarks' && state.settings.activeBoardId === board.id) ? 'active' : '' }`;
     
     item.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-        </svg>
-        <span class="nav-text">${folder.title}</span>
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <path d="M9 3v18"></path>
+            </svg>
+            <span class="nav-text" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${board.name}</span>
+        </div>
+        <div class="nav-actions" style="display: flex; gap: 4px;">
+            <button class="action-btn edit-board-btn" title="Rename Board">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </button>
+            ${board.id !== '1' ? `
+            <button class="action-btn delete-board-btn" title="Delete Board">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>` : ''}
+        </div>
     `;
     
     item.onclick = (e) => {
-        e.preventDefault();
-        if(state.settings.viewMode === 'tabs') {
-             state.settings.activeTab = folder.id;
-             saveSettings();
-             render();
-        } else {
-             const el = document.getElementById(`section-${folder.id}`);
-             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        if (e.target.closest('.action-btn')) return;
+        state.settings.activeBoardId = board.id;
+        state.settings.activeSidebarItem = 'bookmarks';
+        saveSettings();
+        refreshData();
     };
-    ELEMENTS.folderNav.appendChild(item);
+
+    item.querySelector('.edit-board-btn').onclick = (e) => {
+        e.stopPropagation();
+        editBoard(board);
+    };
+
+    const delBtn = item.querySelector('.delete-board-btn');
+    if (delBtn) {
+        delBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteBoard(board);
+        };
+    }
+
+    ELEMENTS.boardsNav.appendChild(item);
+}
+
+async function editBoard(board) {
+    const newName = prompt("Rename Board:", board.name);
+    if (!newName || newName === board.name) return;
+
+    // Update Bookmark Folder Name
+    await chrome.bookmarks.update(board.id, { title: newName });
+    
+    // Update State
+    const boardInState = state.settings.boards.find(b => b.id === board.id);
+    if (boardInState) boardInState.name = newName;
+    
+    saveSettings();
+    render();
+}
+
+async function deleteBoard(board) {
+    if (board.id === '1') return; // Cannot delete primary bookmark board
+    if (!confirm(`Are you sure you want to delete the board "${board.name}" and all its bookmarks?`)) return;
+
+    // Remove Bookmark Folder
+    await chrome.bookmarks.removeTree(board.id);
+    
+    // Update State
+    state.settings.boards = state.settings.boards.filter(b => b.id !== board.id);
+    if (state.settings.activeBoardId === board.id) {
+        state.settings.activeBoardId = '1';
+    }
+    
+    saveSettings();
+    refreshData();
+}
+
+async function createBoard() {
+    const name = prompt("Enter Board Name:");
+    if (!name) return;
+
+    // Create a new folder in Bookmarks Bar for this board
+    const folder = await chrome.bookmarks.create({ parentId: '1', title: name });
+    
+    state.settings.boards.push({ id: folder.id, name: folder.title });
+    state.settings.activeBoardId = folder.id;
+    saveSettings();
+    refreshData();
 }
 
 function getReminders() {
@@ -303,6 +458,7 @@ function renderTabsView() {
         tabsContainer.appendChild(chip);
     };
 
+    // Tabs View now only shows Running Tabs and Folders of the active BOARD.
     if (state.tabs.length > 0) addChip('tabs', 'Running Tabs', state.tabs.length);
     state.flatFolders.forEach(folder => addChip(folder.id, folder.title, folder.children?.length || 0));
 
@@ -602,6 +758,20 @@ function setupEventListeners() {
         const q = e.target.value.toLowerCase();
         document.querySelectorAll('.card').forEach(c => c.style.display = (c.textContent.toLowerCase().includes(q)) ? 'flex' : 'none');
     });
+
+    document.querySelectorAll('.nav-item[data-target]').forEach(item => {
+        item.onclick = (e) => {
+            e.preventDefault();
+            state.settings.activeSidebarItem = item.dataset.target;
+            if (state.settings.activeSidebarItem === 'bookmarks') {
+                 // default to first board if none active
+                 if (!state.settings.activeBoardId) state.settings.activeBoardId = '1';
+            }
+            saveSettings();
+            refreshData();
+        };
+    });
+
     ELEMENTS.cancelEdit.onclick = closeEditModal;
     ELEMENTS.saveEdit.onclick = saveBookmark;
     ELEMENTS.themeToggle.onclick = () => { state.settings.theme = state.settings.theme === 'light' ? 'dark' : 'light'; saveSettings(); applyTheme(); };
@@ -610,6 +780,7 @@ function setupEventListeners() {
     ELEMENTS.createBtn.onclick = () => openEditModal();
     ELEMENTS.addReminderBtn.onclick = () => openEditModal(null, 'reminder');
     ELEMENTS.editType.onchange = updateModalFields;
+    ELEMENTS.createBoardBtn.onclick = createBoard;
 }
 
 function applyTheme() {
