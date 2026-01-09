@@ -5,14 +5,14 @@ interface EditModalProps {
   onClose: () => void;
   onSave: (data: EditData) => void;
   initialData?: EditData | null;
-  forceType?: 'bookmark' | 'folder' | 'reminder' | null;
+  forceType?: 'bookmark' | 'folder' | 'reminder' | 'note' | null;
 }
 
 export interface EditData {
   id?: string;
   title: string;
   url: string;
-  type: 'bookmark' | 'folder' | 'reminder';
+  type: 'bookmark' | 'folder' | 'reminder' | 'note';
   description?: string;
   deadline?: string;
 }
@@ -68,6 +68,7 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
                 <option value="bookmark">Bookmark</option>
                 <option value="folder">Folder</option>
                 <option value="reminder">Reminder</option>
+                <option value="note">Note</option>
               </select>
             </div>
           )}
@@ -87,7 +88,7 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
           </div>
 
           {/* URL */}
-          {formData.type !== 'folder' && (
+          {formData.type !== 'folder' && formData.type !== 'note' && (
             <div className="space-y-2">
               <label className="text-[13px] font-semibold text-text-secondary uppercase tracking-wide">
                 {formData.type === 'reminder' ? 'URL (Optional)' : 'URL'}
@@ -105,11 +106,11 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
           {/* Description */}
           <div className="space-y-2">
             <label className="text-[13px] font-semibold text-text-secondary uppercase tracking-wide">
-              Description (Optional)
+              {formData.type === 'note' ? 'Content' : 'Description (Optional)'}
             </label>
             <textarea
-              rows={3}
-              placeholder="Add some notes..."
+              rows={formData.type === 'note' ? 10 : 3}
+              placeholder={formData.type === 'note' ? 'Write your note here...' : 'Add some notes...'}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-3.5 py-3 rounded-xl bg-bg border border-border-card text-text-primary text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-glow transition-all resize-none"

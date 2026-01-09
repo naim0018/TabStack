@@ -1,15 +1,20 @@
 import React from 'react';
-import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder } from 'lucide-react';
+import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder, FileText, Bell } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
   theme: 'dark' | 'light';
   boards: { id: string; name: string }[];
+  folders?: any[]; // Recursive folders
   activeBoardId: string;
+  activeTabId?: string;
   activeSidebarItem: string;
   onToggleSidebar: () => void;
   onToggleTheme: () => void;
   onSelectBoard: (id: string) => void;
+  onSelectFolder: (id: string) => void;
+  onSelectNotes: () => void;
+  onSelectReminders: () => void;
   onSelectSpace: () => void;
   onCreateBoard: () => void;
 }
@@ -18,11 +23,16 @@ export function Sidebar({
   collapsed,
   theme,
   boards,
+  folders = [],
   activeBoardId,
+  activeTabId,
   activeSidebarItem,
   onToggleSidebar,
   onToggleTheme,
   onSelectBoard,
+  onSelectFolder,
+  onSelectNotes,
+  onSelectReminders,
   onSelectSpace,
   onCreateBoard,
 }: SidebarProps) {
@@ -55,42 +65,78 @@ export function Sidebar({
       </div>
 
       <nav className="flex flex-col gap-1 flex-1 min-h-0">
-        <div className="flex flex-col gap-1 overflow-y-auto flex-1 no-scrollbar">
+        <div className="flex flex-col gap-1 overflow-y-auto flex-1 no-scrollbar pb-4">
+          <div className="text-[10px] uppercase font-bold text-text-secondary/40 mb-2 px-3 tracking-widest {!collapsed ? '' : 'hidden'}">Library</div>
           {boards.map((board) => (
-            <button
-              key={board.id}
-              onClick={() => onSelectBoard(board.id)}
-              className={`
-                flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
-                ${collapsed ? 'justify-center p-2.5' : ''}
-                ${
-                  activeSidebarItem === 'bookmarks' && activeBoardId === board.id
-                    ? 'bg-border-card text-text-primary'
-                    : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
-                }
-              `}
-              title={board.name}
-            >
-              <Folder size={18} className="flex-shrink-0" />
-              {!collapsed && <span className="truncate">{board.name}</span>}
-            </button>
+            <div key={board.id} className="flex flex-col gap-0.5">
+                <button
+                onClick={() => onSelectBoard(board.id)}
+                className={`
+                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
+                    ${collapsed ? 'justify-center p-2.5' : ''}
+                    ${
+                    activeSidebarItem === 'bookmarks' && activeBoardId === board.id && (activeTabId === 'tabs' || !activeTabId)
+                        ? 'bg-border-card text-text-primary shadow-sm'
+                        : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                    }
+                `}
+                title={board.name}
+                >
+                <Folder size={18} className="flex-shrink-0" />
+                {!collapsed && <span className="truncate">{board.name}</span>}
+                </button>
+            </div>
           ))}
+
+          <button
+            onClick={onSelectNotes}
+            className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-all w-full
+              ${collapsed ? 'justify-center p-2.5' : ''}
+              ${
+                activeSidebarItem === 'notes'
+                  ? 'bg-border-card text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+              }
+            `}
+            title="Notes"
+          >
+            <FileText size={18} className="flex-shrink-0" />
+            {!collapsed && <span>Notes</span>}
+          </button>
+
+          <button
+            onClick={onSelectReminders}
+            className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-all w-full
+              ${collapsed ? 'justify-center p-2.5' : ''}
+              ${
+                activeSidebarItem === 'reminders'
+                  ? 'bg-border-card text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+              }
+            `}
+            title="Reminders"
+          >
+            <Bell size={18} className="flex-shrink-0" />
+            {!collapsed && <span>Reminders</span>}
+          </button>
         </div>
+
+        <div className="h-px bg-border-card my-4 mx-0" />
 
         <button
           onClick={onCreateBoard}
           className={`
-            flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mt-2 transition-all w-full
+            flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
             text-text-secondary hover:bg-border-card hover:text-text-primary
             ${collapsed ? 'justify-center p-2.5' : ''}
           `}
           title="Create Board"
         >
           <Plus size={18} className="flex-shrink-0" />
-          {!collapsed && <span>Create Board</span>}
+          {!collapsed && <span>New Board</span>}
         </button>
-
-        <div className="h-px bg-border-card my-4 mx-0" />
 
         <button
           onClick={onSelectSpace}
@@ -99,7 +145,7 @@ export function Sidebar({
             ${collapsed ? 'justify-center p-2.5' : ''}
             ${
               activeSidebarItem === 'spaces'
-                ? 'bg-border-card text-text-primary'
+                ? 'bg-border-card text-text-primary shadow-sm'
                 : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
             }
           `}
@@ -110,7 +156,7 @@ export function Sidebar({
         </button>
       </nav>
 
-      <div className="mt-auto pt-4">
+      <div className="mt-auto pt-4 border-t border-border-card">
         <button
           onClick={onToggleTheme}
           className={`
@@ -121,7 +167,7 @@ export function Sidebar({
           title="Toggle Theme"
         >
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          {!collapsed && <span>Toggle Theme</span>}
+          {!collapsed && <span>{theme === 'dark' ? 'Light' : 'Dark'} Mode</span>}
         </button>
       </div>
     </aside>

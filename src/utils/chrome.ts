@@ -38,7 +38,7 @@ export const chromeApi = {
     getMetadata: async (): Promise<Record<string, any>> => {
         if (isExtension) {
             return new Promise((resolve) => {
-                chrome.storage.local.get(['bookmarkMetadata'], (result) => {
+                chrome.storage.sync.get(['bookmarkMetadata'], (result) => {
                     resolve(result.bookmarkMetadata || {});
                 });
             });
@@ -47,9 +47,27 @@ export const chromeApi = {
     },
     saveMetadata: async (metadata: any) => {
         if (isExtension) {
-            return chrome.storage.local.set({ bookmarkMetadata: metadata });
+            return chrome.storage.sync.set({ bookmarkMetadata: metadata });
         }
         console.log('Saved metadata:', metadata);
+    },
+    getSettings: async (defaultSettings: any): Promise<any> => {
+        if (isExtension) {
+            return new Promise((resolve) => {
+                chrome.storage.sync.get(['appSettings'], (result) => {
+                    resolve(result.appSettings || defaultSettings);
+                });
+            });
+        }
+        const stored = localStorage.getItem('tabstack-settings');
+        return stored ? JSON.parse(stored) : defaultSettings;
+    },
+    saveSettings: async (settings: any) => {
+        if (isExtension) {
+            return chrome.storage.sync.set({ appSettings: settings });
+        }
+        localStorage.setItem('tabstack-settings', JSON.stringify(settings));
+        console.log('Saved settings:', settings);
     },
     createBookmark: async (data: any): Promise<chrome.bookmarks.BookmarkTreeNode> => {
         if (isExtension) return chrome.bookmarks.create(data);
