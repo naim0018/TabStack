@@ -280,7 +280,7 @@ const App = () => {
 
       return (
           <div 
-            className={`mb-8 w-full group/section transition-all ${draggingId ? 'scale-[0.99] opacity-80' : ''}`}
+            className={`mb-8 p-4 w-full group/section transition-all ${draggingId ? 'scale-[0.99] opacity-80' : ''}`}
             onDragOver={(e) => { e.preventDefault(); }}
             onDrop={(e) => !isTabSection && handleDrop(e, id)}
           >
@@ -346,10 +346,10 @@ const App = () => {
              tabCount={tabs.length}
           />
 
-          <div className="flex-1 overflow-y-auto p-8 pt-6 scroll-smooth">
+          <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
               {/* Reminders Shelf */}
               {settings.activeSidebarItem !== 'spaces' && reminders.length > 0 && (
-                  <div className={`mb-10 p-6 bg-gradient-to-br from-bg-card to-accent-glow/10 border border-accent/20 rounded-2xl backdrop-blur-md max-w-[1600px] mx-auto shadow-sm transition-all duration-300 ${settings.collapsedSections.includes('reminders') ? 'pb-4' : 'pb-6'}`}>
+                  <div className={`mb-10 p-4 bg-gradient-to-br from-bg-card to-accent-glow/10 border border-accent/20 rounded-2xl backdrop-blur-md max-w-[1600px] mx-auto shadow-sm transition-all duration-300 ${settings.collapsedSections.includes('reminders') ? 'pb-4' : 'pb-6'}`}>
                       <div 
                         className="text-xs font-bold uppercase tracking-widest text-accent flex items-center justify-between cursor-pointer select-none"
                         onClick={() => handleToggleSection('reminders')}
