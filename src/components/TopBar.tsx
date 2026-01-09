@@ -67,7 +67,7 @@ export function TopBar({
             <span className="text-[11px] font-bold">Reminder</span>
           </button>
 
-          <div className="h-6 w-px border border-white/20 bg-border-card mx-2" />
+          <div className="h-6 w-px bg-border-card/60 mx-2" />
 
           <button
             onClick={onViewValues}
@@ -80,7 +80,7 @@ export function TopBar({
             </span>
           </button>
 
-          <div className="h-6 w-px border border-white/20 bg-border-card mx-2" />
+          <div className="h-6 w-px bg-border-card/60 mx-2" />
 
           <div className="px-3 py-2 bg-bg-card border border-border-card rounded-xl text-[13px] font-medium text-text-primary flex items-center gap-2">
             <span>{tabCount} Active Tabs</span>

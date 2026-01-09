@@ -55,6 +55,7 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [now, setNow] = useState(Date.now());
   const [notesFolderId, setNotesFolderId] = useState<string | null>(null);
+  const [remindersFolderId, setRemindersFolderId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -84,9 +85,11 @@ const App = () => {
 
   // Drag State
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const isMoving = React.useRef(false);
 
   // Load Data
   const refreshData = async () => {
+    if (isMoving.current) return;
     try {
       const [t, tr, m, ts] = await Promise.all([
         chromeApi.getTabs(),
@@ -124,13 +127,86 @@ const App = () => {
       }
       setNotesFolderId(notesId);
 
+      // Find or Create Reminders Folder
+      let remId: string | null = null;
+      const findRemindersFolder = (nodes: any[]): any => {
+        for (let n of nodes) {
+          if (n.title === "TabStack Reminders" && !n.url) return n;
+          if (n.children) {
+            const f = findRemindersFolder(n.children);
+            if (f) return f;
+          }
+        }
+        return null;
+      };
+      const remFolder = findRemindersFolder(tr);
+      if (remFolder) {
+        remId = remFolder.id;
+      } else {
+        const created = await chromeApi.createBookmark({
+          parentId: "1",
+          title: "TabStack Reminders",
+        });
+        remId = created.id;
+      }
+      setRemindersFolderId(remId);
+
+      // Move existing reminders to the organized folder
+      const outOfPlace: any[] = [];
+      const findOutOfPlace = (nodes: any[]) => {
+        for (let n of nodes) {
+          if (m[n.id]?.type === "reminder" && n.parentId !== remId) {
+            outOfPlace.push(n);
+          }
+          if (n.children) findOutOfPlace(n.children);
+        }
+      };
+      findOutOfPlace(tr);
+
+      if (outOfPlace.length > 0 && !isMoving.current) {
+        isMoving.current = true;
+        for (const item of outOfPlace) {
+          await chromeApi.moveBookmark(item.id, { parentId: remId });
+        }
+        isMoving.current = false;
+        // The last move will trigger a refresh anyway via the listener, 
+        // but we ensure the flag is cleared.
+      }
+
       // After loading tree, ensure all boards exist in the actual bookmarks tree
       if (tr.length > 0) {
         const rootBookmarks = tr[0].children || [];
-        // Exclude Notes Folder from Boards
-        const existingBoards = settings.boards.filter((b) => {
-          if (b.id === notesId) return false;
-          const find = (nodes: any[]): any => {
+
+        // Auto-discover "TabStack" boards
+        const discoveredBoards = rootBookmarks
+          .filter(
+            (node: any) =>
+              !node.url &&
+              node.title.startsWith("TabStack ") &&
+              node.title !== "TabStack Notes" &&
+              node.title !== "TabStack Reminders"
+          )
+          .map((node: any) => ({ id: node.id, name: node.title }));
+
+        // Merge discovered with existing settings, avoiding duplicates
+        const mergedBoards = [...settings.boards];
+        discoveredBoards.forEach((d: any) => {
+          if (!mergedBoards.find((b) => b.id === d.id)) {
+            mergedBoards.push(d);
+          }
+        });
+
+        // Validate existence in tree (cleanup deleted boards)
+        const validBoards = mergedBoards.filter((b) => {
+           if (b.id === notesId || b.id === remId) return false;
+           // Check if it exists in root (since we only auto-discover from root)
+           // OR recursively check if we want to support nested boards (stick to root for now based on 'createBoard' logic)
+           const exists = rootBookmarks.find((n: any) => n.id === b.id);
+           // Also check recursively if it was a deep board (though auto-discover is shallow)
+           if (exists) return true;
+
+           // Fallback recursive check for pre-existing deep boards
+           const find = (nodes: any[]): any => {
             for (let n of nodes) {
               if (n.id === b.id) return n;
               if (n.children) {
@@ -142,11 +218,11 @@ const App = () => {
           };
           return find(rootBookmarks);
         });
+
         if (
-          existingBoards.length !== settings.boards.length &&
-          existingBoards.length > 0
+          JSON.stringify(validBoards) !== JSON.stringify(settings.boards)
         ) {
-          setSettings((s) => ({ ...s, boards: existingBoards }));
+          setSettings((s) => ({ ...s, boards: validBoards }));
         }
       }
     } catch (err) {
@@ -240,11 +316,11 @@ const App = () => {
       const collect = (node: any, isRoot: boolean) => {
         if (node.children) {
           // Skip the Notes folder if encountered
-          if (node.id === notesFolderId) return;
+          if (node.id === notesFolderId || node.id === remindersFolderId) return;
 
           if (!isRoot) flat.push(node);
           node.children.forEach((child: any) => {
-            if (child.id === notesFolderId) return; // Skip
+            if (child.id === notesFolderId || child.id === remindersFolderId) return; // Skip
 
             if (!child.children) {
               all.push(child);
@@ -342,6 +418,8 @@ const App = () => {
         const parentId =
           type === "note"
             ? notesFolderId || "1"
+            : type === "reminder"
+            ? remindersFolderId || "1"
             : settings.activeTab !== "tabs"
             ? settings.activeTab
             : settings.activeBoardId;
@@ -371,6 +449,33 @@ const App = () => {
       refreshData();
     } catch (e) {
       console.error("Failed to save metadata", e);
+    }
+  };
+
+  const handleCreateBoard = async () => {
+    const name = prompt("Enter Board Name:");
+    if (!name) return;
+
+    const folderTitle = name.toLowerCase().startsWith("tabstack ")
+      ? name
+      : `TabStack ${name}`;
+
+    try {
+      const folder = await chromeApi.createBookmark({
+        parentId: "1",
+        title: folderTitle,
+      });
+
+      setSettings((s) => ({
+        ...s,
+        boards: [...s.boards, { id: folder.id, name: folder.title }],
+        activeBoardId: folder.id,
+        activeSidebarItem: "bookmarks",
+        activeTab: "tabs",
+      }));
+      refreshData();
+    } catch (e) {
+      console.error("Failed to create board", e);
     }
   };
 
@@ -547,11 +652,7 @@ const App = () => {
         onSelectReminders={() =>
           setSettings((s) => ({ ...s, activeSidebarItem: "reminders" }))
         }
-        onCreateBoard={() => {
-          setModalForceType("folder");
-          setModalInitialData(null);
-          setIsModalOpen(true);
-        }}
+        onCreateBoard={handleCreateBoard}
       />
       <main className="flex-1 flex flex-col min-w-0 bg-bg relative">
         <TopBar
@@ -582,7 +683,7 @@ const App = () => {
             settings.activeSidebarItem !== "reminders" &&
             reminders.length > 0 && (
             <div
-              className={`mb-10 p-4 bg-gradient-to-br from-bg-card to-accent-glow/10 border border-accent/20 rounded-2xl backdrop-blur-md max-w-[1600px] mx-auto shadow-sm transition-all duration-300 ${
+              className={`mb-10 p-4 bg-gradient-to-br from-bg-card to-accent-glow/10 border border-border-card rounded-2xl backdrop-blur-md max-w-[1600px] mx-auto shadow-sm transition-all duration-300 ${
                 settings.collapsedSections.includes("reminders")
                   ? "pb-4"
                   : "pb-6"
@@ -653,7 +754,7 @@ const App = () => {
                   <h2 className="text-2xl font-black text-text-primary tracking-tight">
                     Your Spaces
                   </h2>
-                  <div className="h-px flex-1 bg-border-card mx-6 opacity-40"></div>
+                  <div className="h-px flex-1 bg-border-card mx-6"></div>
                 </div>
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 px-2">
                   <div
@@ -675,7 +776,7 @@ const App = () => {
                       <span className="text-xl font-black text-text-primary group-hover:text-accent transition-colors tracking-tight">
                         Notes
                       </span>
-                      <div className="text-xs text-text-secondary mt-1 font-medium opacity-60">
+                      <div className="text-xs text-text-secondary mt-1 font-medium">
                         View and manage your notes
                       </div>
                     </div>
@@ -700,7 +801,7 @@ const App = () => {
                       <span className="text-xl font-black text-text-primary group-hover:text-accent transition-colors tracking-tight">
                         Reminders
                       </span>
-                      <div className="text-xs text-text-secondary mt-1 font-medium opacity-60">
+                      <div className="text-xs text-text-secondary mt-1 font-medium">
                         Stay on top of your tasks
                       </div>
                     </div>
@@ -728,7 +829,7 @@ const App = () => {
                         <span className="text-xl font-black text-text-primary group-hover:text-accent transition-colors tracking-tight">
                           {board.name}
                         </span>
-                        <div className="text-xs text-text-secondary mt-1 font-medium opacity-60">
+                        <div className="text-xs text-text-secondary mt-1 font-medium">
                           Custom Board Space
                         </div>
                       </div>

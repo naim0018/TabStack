@@ -15,7 +15,9 @@ let state = {
         boards: [{ id: '1', name: 'Bookmark' }],
         collapsedSections: ['top-sites', 'loose'], 
     },
-    metadata: {} 
+    metadata: {},
+    notesFolderId: null,
+    remindersFolderId: null
 };
 
 const ELEMENTS = {
@@ -106,8 +108,84 @@ async function refreshData() {
     state.tabs = tabs;
     state.metadata = metadata || {};
     state.topSites = topSites.slice(0, 10);
+    state.tree = tree;
+
+    // Find or Create Folders
+    function findFolder(nodes, title) {
+        for (const node of nodes) {
+            if (node.title === title && !node.url) return node;
+            if (node.children) {
+                const found = findFolder(node.children, title);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    let notesF = findFolder(tree, "TabStack Notes");
+    if (!notesF) {
+        notesF = await chrome.bookmarks.create({ parentId: "1", title: "TabStack Notes" });
+    }
+    state.notesFolderId = notesF.id;
+
+    let remF = findFolder(tree, "TabStack Reminders");
+    if (!remF) {
+        remF = await chrome.bookmarks.create({ parentId: "1", title: "TabStack Reminders" });
+    }
+    state.remindersFolderId = remF.id;
+
+    // Move existing reminders
+    const outOfPlace = [];
+    function findOutOfPlace(nodes) {
+        for (const n of nodes) {
+            if (state.metadata[n.id]?.type === 'reminder' && n.parentId !== state.remindersFolderId) {
+                outOfPlace.push(n);
+            }
+            if (n.children) findOutOfPlace(n.children);
+        }
+    }
+    findOutOfPlace(tree);
+
+    if (outOfPlace.length > 0) {
+        for (const item of outOfPlace) {
+            await chrome.bookmarks.move(item.id, { parentId: state.remindersFolderId });
+        }
+    }
     
     processBookmarks(tree);
+
+    // Auto-discover boards
+    const root = tree[0]?.children || [];
+    const discovered = root.filter(n => 
+        !n.url && 
+        n.title.startsWith('TabStack ') && 
+        n.title !== 'TabStack Notes' && 
+        n.title !== 'TabStack Reminders'
+    ).map(n => ({ id: n.id, name: n.title }));
+
+    const merged = [...state.settings.boards];
+    discovered.forEach(d => {
+        if (!merged.find(b => b.id === d.id)) merged.push(d);
+    });
+
+    // Validate existence
+    const valid = merged.filter(b => {
+        if (b.id === state.notesFolderId || b.id === state.remindersFolderId) return false;
+        function exists(nodes) {
+            for (const n of nodes) {
+                if (n.id === b.id) return true;
+                if (n.children && exists(n.children)) return true;
+            }
+            return false;
+        }
+        return exists(root);
+    });
+
+    if (JSON.stringify(valid) !== JSON.stringify(state.settings.boards)) {
+        state.settings.boards = valid;
+        saveSettings();
+    }
+
     render();
 }
 
@@ -154,7 +232,7 @@ function processBookmarks(tree) {
     
     const notesFolder = findNotesFolder(tree);
     if (notesFolder) {
-        state.settings.notesFolderId = notesFolder.id;
+        state.notesFolderId = notesFolder.id;
         state.notes = (notesFolder.children || []).map(n => ({
             ...n,
             ...(state.metadata[n.id] || {}),
@@ -173,13 +251,13 @@ function processBookmarks(tree) {
     if (boardNode && boardNode.children) {
         function collect(node, isRoot = false) {
             if (node.children) {
-                if (String(node.id) === String(state.settings.notesFolderId)) return;
+                if (String(node.id) === String(state.notesFolderId) || String(node.id) === String(state.remindersFolderId)) return;
 
                 if (!isRoot) {
                     state.flatFolders.push(node);
                 }
                 node.children.forEach(child => {
-                    if (String(child.id) === String(state.settings.notesFolderId)) return;
+                    if (String(child.id) === String(state.notesFolderId) || String(child.id) === String(state.remindersFolderId)) return;
 
                     if (!child.children) {
                         state.allBookmarks.push(child);
@@ -477,11 +555,14 @@ async function deleteBoard(board) {
 }
 
 async function createBoard() {
-    const name = prompt("Enter Board Name:");
+    let name = prompt("Enter Board Name:");
     if (!name) return;
 
+    // Prefix with TabStack if not already present
+    const folderTitle = name.toLowerCase().startsWith("tabstack ") ? name : `TabStack ${name}`;
+
     // Create a new folder in Bookmarks Bar for this board
-    const folder = await chrome.bookmarks.create({ parentId: '1', title: name });
+    const folder = await chrome.bookmarks.create({ parentId: '1', title: folderTitle });
     
     state.settings.boards.push({ id: folder.id, name: folder.title });
     state.settings.activeBoardId = folder.id;
@@ -1010,7 +1091,14 @@ async function saveBookmark() {
     let id = editingBookmarkId;
     try {
         if (editingBookmarkId === 'new') {
-            const parentId = state.settings.activeTab !== 'tabs' && state.settings.activeTab !== 'reminders' ? state.settings.activeTab : '1';
+            let parentId = '1';
+            if (type === 'reminder') {
+                parentId = state.remindersFolderId || '1';
+            } else if (type === 'note') {
+                parentId = state.notesFolderId || '1';
+            } else if (state.settings.activeTab !== 'tabs' && state.settings.activeTab !== 'reminders') {
+                parentId = state.settings.activeTab;
+            }
             const createParams = { parentId, title };
             if (type !== 'folder') createParams.url = url;
             const node = await chrome.bookmarks.create(createParams);

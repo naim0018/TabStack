@@ -66,7 +66,7 @@ export function Sidebar({
 
       <nav className="flex flex-col gap-1 flex-1 min-h-0">
         <div className="flex flex-col gap-1 overflow-y-auto flex-1 no-scrollbar pb-4">
-          <div className="text-[10px] uppercase font-bold text-text-secondary/40 mb-2 px-3 tracking-widest {!collapsed ? '' : 'hidden'}">Library</div>
+          <div className="text-[10px] uppercase font-bold text-text-secondary/60 mb-2 px-3 tracking-widest {!collapsed ? '' : 'hidden'}">Library</div>
           {boards.map((board) => (
             <div key={board.id} className="flex flex-col gap-0.5">
                 <button

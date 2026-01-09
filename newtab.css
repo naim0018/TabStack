@@ -19,15 +19,17 @@
 
 [data-theme="light"] {
   /* Soft Light Mode */
-  --bg-color: #f1f3f6;
+  --bg-color: #f8fafc;
   --sidebar-bg: #ffffff;
-  --card-bg: #fafbfc;
+  --card-bg: #ffffff;
   --card-border: #e2e8f0;
-  --header-bg: rgba(241, 243, 246, 0.9);
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --accent: #0ea5e9;
-  --accent-glow: rgba(14, 165, 233, 0.08);
+  --header-bg: rgba(248, 250, 252, 0.9);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --accent: #0284c7;
+  --accent-glow: rgba(2, 132, 199, 0.12);
+  --danger: #e11d48;
+  --success: #059669;
   --scrollbar-thumb: #cbd5e1;
 }
 

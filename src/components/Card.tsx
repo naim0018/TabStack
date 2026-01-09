@@ -134,7 +134,7 @@ export function Card({
               ? isPast || isUrgent
                 ? "bg-danger/10 text-danger"
                 : "bg-accent/10 text-accent"
-              : "bg-bg/50 text-text-secondary"
+              : "bg-border-card/20 text-text-secondary"
           }
         `}
         >
@@ -147,7 +147,7 @@ export function Card({
           ) : favUrl ? (
             <img src={favUrl} alt="" className="w-5 h-5 object-contain" />
           ) : (
-            <div className="w-4 h-4 rounded-full border-2 border-currentColor opacity-50" />
+            <div className="w-4 h-4 rounded-full border-2 border-currentColor" />
           )}
         </div>
 
