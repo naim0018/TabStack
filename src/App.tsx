@@ -451,7 +451,7 @@ const App = () => {
                             <h2 className="text-2xl font-black text-text-primary tracking-tight">Your Spaces</h2>
                             <div className="h-px flex-1 bg-border-card mx-6 opacity-40"></div>
                         </div>
-                        <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6">
+                        <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 px-2">
                             {settings.boards.map(board => (
                                 <div 
                                   key={board.id}
@@ -477,7 +477,7 @@ const App = () => {
                     <div className="flex flex-col min-w-0">
                       {settings.viewMode === 'tabs' ? (
                         <div className="animate-in fade-in duration-300">
-                           <div className="flex flex-wrap gap-2 mb-10 overflow-x-auto pb-2 no-scrollbar">
+                           <div className="flex flex-wrap gap-4 px-2  mb-10 overflow-x-auto pb-2 no-scrollbar">
                                {[
                                   { id: 'tabs', title: 'Running Tabs', count: tabs.length },
                                   ...flatFolders.map((f: any) => ({ id: f.id, title: f.title, count: f.children?.length || 0 }))
