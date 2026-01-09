@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Soft Dark Mode (Default) */
+    --bg-color: #1a1c23;
+    --sidebar-bg: #111318;
+    --card-bg: rgba(30, 41, 59, 0.4);
+    --card-border: rgba(148, 163, 184, 0.08);
+    --header-bg: rgba(26, 28, 35, 0.85);
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --accent: #38bdf8;
+    --accent-glow: rgba(56, 189, 248, 0.12);
+    --danger: #f43f5e;
+    --success: #10b981;
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: rgba(148, 163, 184, 0.15);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  }
+
+  [data-theme="light"] {
+    /* Soft Light Mode */
+    --bg-color: #f1f3f6;
+    --sidebar-bg: #ffffff;
+    --card-bg: #fafbfc;
+    --card-border: #e2e8f0;
+    --header-bg: rgba(241, 243, 246, 0.9);
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --accent: #0ea5e9;
+    --accent-glow: rgba(14, 165, 233, 0.08);
+    --scrollbar-thumb: #cbd5e1;
+  }
+
+  body {
+    @apply bg-bg text-text-primary h-screen overflow-hidden transition-colors duration-300;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
