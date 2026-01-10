@@ -857,6 +857,26 @@ const App = () => {
                                 : "horizontal",
                           }))
                         }
+                        onToggleAllSections={(collapse) => {
+                          if (collapse) {
+                            const allIds = flatFolders.map((f: any) => f.id);
+                            if (
+                              settings.activeSidebarItem === "bookmarks" &&
+                              settings.activeBoardId === "1"
+                            ) {
+                              allIds.push("tabs");
+                            }
+                            setSettings((s) => ({
+                              ...s,
+                              collapsedSections: allIds,
+                            }));
+                          } else {
+                            setSettings((s) => ({
+                              ...s,
+                              collapsedSections: [],
+                            }));
+                          }
+                        }}
                         tabs={tabs}
                         flatFolders={flatFolders}
                         looseBookmarks={looseBookmarks}

@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useRef } from "react";
 import { SectionList } from "../components/SectionList";
 import { Settings } from "../types";
-import { Folder, LayoutList, Columns } from "lucide-react";
+import { Folder, LayoutList, Columns, ChevronLeft, ChevronRight, ChevronsUp, ChevronsDown } from "lucide-react";
 import { chromeApi } from "../utils/chrome";
 
 interface BookmarksViewProps {
@@ -21,7 +21,10 @@ interface BookmarksViewProps {
   onTabClose: (item: any) => void;
   onCreateBookmark: () => void;
   onToggleViewMode?: () => void;
+  onToggleAllSections?: (collapse: boolean) => void;
 }
+
+
 
 export function BookmarksView({
   settings,
@@ -40,8 +43,22 @@ export function BookmarksView({
   onTabClose,
   onCreateBookmark,
   onToggleViewMode,
+  onToggleAllSections,
 }: BookmarksViewProps) {
   const isColumnView = settings.gridMode === "vertical";
+  const totalSections = flatFolders.length + (settings.activeSidebarItem === "bookmarks" && settings.activeBoardId === "1" ? 1 : 0);
+  const isAllCollapsed = settings.collapsedSections.length >= totalSections && totalSections > 0;
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const scrollAmount = 340;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   return (
     <div className="animate-in fade-in duration-300 h-full flex flex-col">
@@ -50,22 +67,57 @@ export function BookmarksView({
         <h1 className="text-2xl font-black text-text-primary tracking-tight">
           My Bookmark
         </h1>
-        {onToggleViewMode && (
-          <button
-            onClick={onToggleViewMode}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-card border border-border-card hover:border-accent/40 text-text-secondary hover:text-text-primary transition-all shadow-sm"
-          >
-            {isColumnView ? <LayoutList size={16} /> : <Columns size={16} />}
-            <span className="text-xs font-bold uppercase tracking-wider">
-              {isColumnView ? "List View" : "Board View"}
-            </span>
-          </button>
-        )}
+
+        <div className="flex items-center gap-3">
+          {isColumnView && (
+            <div className="flex items-center bg-bg-card border border-border-card rounded-lg shadow-sm overflow-hidden">
+              <button
+                onClick={() => scroll("left")}
+                className="p-1.5 px-2 hover:bg-accent/10 hover:text-accent text-text-secondary transition-colors border-r border-border-card"
+                title="Scroll Left"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => scroll("right")}
+                className="p-1.5 px-2 hover:bg-accent/10 hover:text-accent text-text-secondary transition-colors"
+                title="Scroll Right"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+
+          {onToggleViewMode && (
+            <button
+              onClick={onToggleViewMode}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-card border border-border-card hover:border-accent/40 text-text-secondary hover:text-text-primary transition-all shadow-sm"
+            >
+              {isColumnView ? <LayoutList size={16} /> : <Columns size={16} />}
+              <span className="text-xs font-bold uppercase tracking-wider">
+                {isColumnView ? "List View" : "Board View"}
+              </span>
+            </button>
+          )}
+
+          {onToggleAllSections && (
+            <button
+              onClick={() => onToggleAllSections(isAllCollapsed ? false : true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-card border border-border-card hover:border-accent/40 text-text-secondary hover:text-text-primary transition-all shadow-sm"
+              title={isAllCollapsed ? "Expand All" : "Collapse All"}
+            >
+              {isAllCollapsed ? <ChevronsDown size={16} /> : <ChevronsUp size={16} />}
+              <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">
+                {isAllCollapsed ? "Expand" : "Collapse"}
+              </span>
+            </button>
+          )}
+        </div>
       </div>
 
       {isColumnView ? (
         /* Horizontal Scrolling Column View */
-        <div className="flex overflow-x-auto gap-6 pb-6 h-full items-start snap-x">
+        <div ref={scrollRef} className="flex overflow-x-auto gap-6 pb-6 h-full items-start snap-x scroll-smooth">
           {/* Running Tabs Column */}
           {settings.activeSidebarItem === "bookmarks" &&
             settings.activeBoardId === "1" && (
