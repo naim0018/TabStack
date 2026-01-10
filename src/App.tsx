@@ -622,16 +622,30 @@ const App = () => {
     try {
       // Check if it's a tab or bookmark (tabs are numeric, but in our wrapper we handle it)
       const tab = tabs.find((t) => String(t.id) === sourceId);
-      if (tab) {
-        // Convert Tab to Bookmark
-        await chromeApi.createBookmark({
-          parentId,
-          title: tab.title,
-          url: tab.url,
-        });
+
+      if (parentId === "tabs") {
+        // Dropping Item onto Running Tabs Column
+        if (!tab) {
+          // It's a bookmark -> Open as new tab
+          const bookmark = allBookmarks.find((b) => String(b.id) === sourceId);
+          if (bookmark && bookmark.url) {
+            window.open(bookmark.url, "_blank");
+          }
+        }
+        // If it's already a tab, we ignore (reordering tabs not implemented yet)
       } else {
-        // Move Bookmark
-        await chromeApi.moveBookmark(sourceId, { parentId });
+        // Dropping Item onto a Folder Column
+        if (tab) {
+          // Convert Tab to Bookmark
+          await chromeApi.createBookmark({
+            parentId,
+            title: tab.title,
+            url: tab.url,
+          });
+        } else {
+          // Move Bookmark to new Folder
+          await chromeApi.moveBookmark(sourceId, { parentId });
+        }
       }
       refreshData();
     } catch (err) {

@@ -63,7 +63,7 @@ export function SectionList({
       onDragOver={(e) => {
         e.preventDefault();
       }}
-      onDrop={(e) => !isTabSection && onDrop(e, id)}
+      onDrop={(e) => onDrop(e, id)}
     >
       <div
         className={`flex items-center gap-2 cursor-pointer select-none ${
