@@ -73,7 +73,7 @@ body {
   
   /* Glassmorphism Effect */
   .glass {
-    background-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, var(--glass-opacity, 0.6));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -81,7 +81,12 @@ body {
   }
 
   [data-theme="dark"] .glass {
-    background-color: rgba(15, 23, 42, 0.6);
+    background-color: rgba(15, 23, 42, var(--glass-opacity, 0.6));
     border-color: rgba(255, 255, 255, 0.1);
   }
+}
+
+/* Protect images and icons from global brightness adjustments */
+img, svg {
+  filter: brightness(calc(1 / var(--app-brightness, 1)));
 }

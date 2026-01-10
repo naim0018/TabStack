@@ -10,10 +10,10 @@ import { SpacesView } from "./pages/SpacesView";
 import { NotesView } from "./pages/NotesView";
 import { RemindersView } from "./pages/RemindersView";
 import { BookmarksView } from "./pages/BookmarksView";
-import { BackgroundSettings } from "./pages/BackgroundSettings";
+import { CustomizeSettings } from "./pages/CustomizeSettings";
 import { SectionList } from "./components/SectionList";
 import { Settings, DEFAULT_SETTINGS, BookmarkItem } from "./types";
-import { Clock as ClockWidget, Calendar } from './components/Widgets';
+import { Clock as ClockWidget, Calendar } from "./components/Widgets";
 
 import { ChevronDown, ExternalLink, Folder } from "lucide-react";
 
@@ -679,7 +679,17 @@ const App = () => {
         />
       )}
 
-      <div className="relative z-10 flex h-full w-full">
+      <div 
+        className="relative z-10 flex h-full w-full"
+        style={
+          {
+            "--glass-opacity": (settings.cardOpacity ?? 60) / 100,
+            "--text-primary": settings.textColor || undefined,
+            "--app-brightness": (settings.textBrightness ?? 100) / 100,
+            filter: "brightness(var(--app-brightness))",
+          } as React.CSSProperties
+        }
+      >
         <Sidebar
           collapsed={settings.sidebarCollapsed}
           theme={settings.theme}
@@ -727,8 +737,8 @@ const App = () => {
           onSelectDashboard={() =>
             setSettings((s) => ({ ...s, activeSidebarItem: "dashboard" }))
           }
-          onSelectBackground={() =>
-            setSettings((s) => ({ ...s, activeSidebarItem: "background" }))
+          onSelectCustomize={() =>
+            setSettings((s) => ({ ...s, activeSidebarItem: "customize" }))
           }
           onCreateBoard={handleCreateBoard}
           onEditBoard={async (id, name) => {
@@ -742,6 +752,7 @@ const App = () => {
           className={`flex-1 flex flex-col min-w-0 relative ${
             settings.backgroundImage ? "bg-transparent" : "bg-bg"
           }`}
+
         >
           <TopBar
             onSearch={setSearchQuery}
@@ -829,8 +840,8 @@ const App = () => {
                         }}
                         onDelete={(id) => deleteItem(id)}
                       />
-                    ) : settings.activeSidebarItem === "background" ? (
-                      <BackgroundSettings
+                    ) : settings.activeSidebarItem === "customize" ? (
+                      <CustomizeSettings
                         settings={settings}
                         setSettings={setSettings}
                       />
@@ -972,13 +983,13 @@ const App = () => {
                                 href={site.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="glass flex flex-col items-center gap-2 p-3 rounded-xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all cursor-pointer group"
+                                className="flex flex-col items-center gap-2 p-3 rounded-xl border border-transparent hover:border-accent/40 hover:bg-white/5 transition-all cursor-pointer group"
                               >
                                 <img
                                   src={`https://www.google.com/s2/favicons?domain=${
                                     site.url || ""
                                   }&sz=64`}
-                                  className="w-8 h-8 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all"
+                                  className="w-8 h-8 group-hover:opacity-100 group-hover:scale-110 transition-all"
                                   alt=""
                                 />
                                 <div className="text-[10px] font-bold text-text-primary text-center truncate w-full">

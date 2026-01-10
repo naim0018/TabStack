@@ -33,7 +33,7 @@ interface TopBarProps {
   
     return (
       /* Main Header Container - Fixed at top, blurred background */
-      <header className={`h-[74px] px-8 border-b backdrop-blur-md sticky top-0 z-[50] flex items-center justify-between ${hasBackground ? 'bg-white/70 dark:bg-black/10 border-white/20 dark:border-white/10' : 'bg-bg-header border-border-card'}`}>
+      <header className={`h-[74px] px-8 sticky top-0 z-[50] flex items-center justify-between ${hasBackground ? 'glass !rounded-none !border-x-0 !border-t-0 !shadow-none' : 'bg-bg-header border-b border-border-card backdrop-blur-md'}`}>
         <div className="w-full max-w-[1680px] mx-auto flex items-center h-full">
           
           {/* =================================================================

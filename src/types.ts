@@ -12,32 +12,37 @@ export interface Settings {
   backgroundImage?: string;
   backgroundOpacity?: number;
   backgroundBlur?: number;
+  cardOpacity?: number;
+  textBrightness?: number;
+  textColor?: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: "dark",
   sidebarCollapsed: false,
-  viewMode: "feed",
-  activeTab: "tabs",
   activeBoardId: "1",
   activeSidebarItem: "dashboard",
-  boards: [{ id: "1", name: "Bookmark" }],
-  collapsedSections: [],
+  activeTab: "tabs",
   clockMode: "digital",
-  gridMode: "horizontal",
+  boards: [],
+  collapsedSections: [],
+  viewMode: "feed",
   backgroundImage: "",
   backgroundOpacity: 50,
   backgroundBlur: 0,
+  cardOpacity: 60,
+  textBrightness: 100,
+  textColor: "#e2e8f0", // Default text-primary
 };
 
 export interface BookmarkItem {
   id: string;
   title: string;
   url?: string;
+  parentId?: string;
   dateAdded?: number;
   children?: BookmarkItem[];
-  parentId?: string;
-  type?: "bookmark" | "folder" | "reminder" | "note";
+  type?: "bookmark" | "folder";
   description?: string;
   deadline?: string;
 }

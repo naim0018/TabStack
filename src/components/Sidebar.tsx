@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder, FileText, Bell, Trash2, Edit2, LayoutDashboard, ImagePlus } from 'lucide-react';
+import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder, FileText, Bell, Trash2, Edit2, LayoutDashboard, Palette } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -17,7 +17,7 @@ interface SidebarProps {
   onSelectReminders: () => void;
   onSelectSpace: () => void;
   onSelectDashboard: () => void;
-  onSelectBackground: () => void;
+  onSelectCustomize: () => void;
   onCreateBoard: () => void;
   onEditBoard?: (id: string, name: string) => void;
   onDeleteBoard?: (id: string) => void;
@@ -43,7 +43,7 @@ export function Sidebar({
   onSelectReminders,
   onSelectSpace,
   onSelectDashboard,
-  onSelectBackground,
+  onSelectCustomize,
   onCreateBoard,
   onEditBoard,
   onDeleteBoard,
@@ -56,7 +56,7 @@ export function Sidebar({
         border-r flex flex-col flex-shrink-0 
         transition-all duration-300 ease-in-out h-full z-[60]
         ${collapsed ? 'w-[72px] p-2' : 'w-[260px] p-6'}
-        ${hasBackground ? 'bg-white/70 dark:bg-black/10 backdrop-blur-md border-white/20 dark:border-white/10' : 'bg-bg-sidebar border-border-card'}
+        ${hasBackground ? 'glass !rounded-none !border-l-0 !border-y-0 !shadow-none' : 'bg-bg-sidebar border-border-card'}
       `}
     >
       <div className={`flex items-center justify-between mb-8 ${collapsed ? 'flex-col gap-4 justify-center mb-6' : ''}`}>
@@ -207,22 +207,22 @@ export function Sidebar({
 
       <div className="mt-auto pt-4 border-t border-border-card space-y-1">
         <button
-          onClick={onSelectBackground}
+          onClick={onSelectCustomize}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
             ${collapsed ? 'justify-center p-2.5' : ''}
             ${
-              activeSidebarItem === 'background'
+              activeSidebarItem === 'customize'
                 ? 'bg-border-card text-gray-200 shadow-sm'
                 : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
             }
           `}
-          title="Background Settings"
+          title="Customize"
         >
-          <ImagePlus size={20} />
-          {!collapsed && <span>Background</span>}
+          <Palette size={20} className="flex-shrink-0" />
+          {!collapsed && <span>Customize</span>}
         </button>
-        <button
+        {/* <button
           onClick={onToggleTheme}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
@@ -233,7 +233,7 @@ export function Sidebar({
         >
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           {!collapsed && <span>{theme === 'dark' ? 'Light' : 'Dark'} Mode</span>}
-        </button>
+        </button> */}
       </div>
     </aside>
   );
