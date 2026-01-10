@@ -114,12 +114,15 @@ export function Card({
         }`}
       >
         <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-text-secondary">
-           {isFolder ? (
+          {isFolder ? (
             <FolderIcon size={16} className="text-accent" />
           ) : isNote ? (
             <FileText size={16} className="text-accent" />
           ) : isReminder ? (
-            <Bell size={16} className={isPast || isUrgent ? "text-danger" : "text-accent"} />
+            <Bell
+              size={16}
+              className={isPast || isUrgent ? "text-danger" : "text-accent"}
+            />
           ) : favUrl ? (
             <img src={favUrl} alt="" className="w-4 h-4 object-contain" />
           ) : (
@@ -128,25 +131,59 @@ export function Card({
         </div>
 
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="text-[13px] font-medium text-text-primary truncate group-hover:text-accent transition-colors">
-              {item.title || "Untitled"}
+          <div className="text-[13px] text-text-primary truncate group-hover:text-accent transition-colors">
+            {item.title || "Untitled"}
+          </div>
+          {item.description && (
+            <div className="text-[10px] text-text-secondary truncate opacity-60">
+              {item.description}
             </div>
-            {item.description && <div className="text-[10px] text-text-secondary truncate opacity-60">{item.description}</div>}
+          )}
         </div>
 
         {/* Actions - Show on Hover */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-           {item.url && item.url !== "about:blank" && (
-             <button onClick={handleCopy} className="p-1 hover:text-accent text-text-secondary transition-colors" title="Copy"><Copy size={12} /></button>
-           )}
-           {isTab ? (
-              <button onClick={(e) => { e.stopPropagation(); onClose?.(); }} className="p-1 hover:text-danger text-text-secondary transition-colors"><X size={12} /></button>
-           ) : (
-             <>
-              <button onClick={(e) => { e.stopPropagation(); onEdit?.(); }} className="p-1 hover:text-accent text-text-secondary transition-colors"><Edit2 size={12} /></button>
-              <button onClick={(e) => { e.stopPropagation(); onDelete?.(); }} className="p-1 hover:text-danger text-text-secondary transition-colors"><Trash2 size={12} /></button>
-             </>
-           )}
+          {item.url && item.url !== "about:blank" && (
+            <button
+              onClick={handleCopy}
+              className="p-1 hover:text-accent text-text-secondary transition-colors"
+              title="Copy"
+            >
+              <Copy size={12} />
+            </button>
+          )}
+          {isTab ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose?.();
+              }}
+              className="p-1 hover:text-danger text-text-secondary transition-colors"
+            >
+              <X size={12} />
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit?.();
+                }}
+                className="p-1 hover:text-accent text-text-secondary transition-colors"
+              >
+                <Edit2 size={12} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.();
+                }}
+                className="p-1 hover:text-danger text-text-secondary transition-colors"
+              >
+                <Trash2 size={12} />
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -158,10 +195,10 @@ export function Card({
       onDragStart={onDragStart}
       draggable={!isTab && item.id !== undefined}
       className={`
-        glass group relative p-4 rounded-2xl border transition-all duration-300 backdrop-blur-md overflow-hidden
+        glass group relative p-2 rounded-xl border transition-all duration-300 backdrop-blur-md overflow-hidden
         ${
           isTab
-            ? "min-h-[80px] hover:border-accent/40 bg-bg-card/50"
+            ? "min-h-[60px] hover:border-accent/40 bg-bg-card/50"
             : "cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:shadow-accent/5"
         }
         ${
@@ -204,7 +241,7 @@ export function Card({
 
         <div className="flex-1 min-w-0">
           <div
-            className={`text-base font-semibold text-text-primary truncate transition-colors group-hover:text-accent mb-0.5`}
+            className={`text-[13px] text-text-primary truncate transition-colors group-hover:text-accent mb-0.5`}
           >
             {item.title || "Untitled"}
           </div>
@@ -242,15 +279,25 @@ export function Card({
             <div
               className={`
               px-3 py-2.5 rounded-xl flex flex-col gap-2 bg-gradient-to-br transition-all duration-300 border
-              ${isPast || isUrgent 
-                ? "from-danger/10 to-danger/5 border-danger/20 shadow-sm shadow-danger/5" 
-                : "from-accent/10 to-accent/5 border-accent/20 shadow-sm shadow-accent/5"
+              ${
+                isPast || isUrgent
+                  ? "from-danger/10 to-danger/5 border-danger/20 shadow-sm shadow-danger/5"
+                  : "from-accent/10 to-accent/5 border-accent/20 shadow-sm shadow-accent/5"
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-secondary">
-                  <Clock size={12} className={isPast || isUrgent ? "text-danger" : "text-accent"} />
-                  <span className={isPast || isUrgent ? "text-danger" : "text-accent"}>
+                  <Clock
+                    size={12}
+                    className={
+                      isPast || isUrgent ? "text-danger" : "text-accent"
+                    }
+                  />
+                  <span
+                    className={
+                      isPast || isUrgent ? "text-danger" : "text-accent"
+                    }
+                  >
                     {isPast ? "Expired" : "Deadline"}
                   </span>
                 </div>
@@ -276,7 +323,7 @@ export function Card({
                   day: "numeric",
                   hour: "numeric",
                   minute: "2-digit",
-                  hour12: true
+                  hour12: true,
                 })}
               </div>
             </div>
@@ -285,7 +332,7 @@ export function Card({
           {item.description && (
             <p
               className={`
-               text-[11px] text-text-secondary/80 leading-relaxed font-medium px-1
+               text-[11px] text-text-secondary/80 leading-relaxed px-1
                ${isNote || isReminder ? "" : "line-clamp-2"}
              `}
             >
@@ -294,8 +341,8 @@ export function Card({
           )}
 
           {!isReminder && item.dateAdded && (
-            <div className="flex items-center gap-1.5 text-[9px] text-text-secondary/40 font-bold uppercase tracking-widest mt-1">
-              <span>Added {new Date(item.dateAdded).toLocaleDateString()}</span>
+            <div className="flex items-center gap-1.5 text-[9px] text-text-secondary/40 uppercase tracking-widest mt-1">
+              <span>{new Date(item.dateAdded).toLocaleDateString()}</span>
             </div>
           )}
         </div>

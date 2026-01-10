@@ -848,6 +848,15 @@ const App = () => {
                     ) : (
                       <BookmarksView
                         settings={settings}
+                        onToggleViewMode={() =>
+                          setSettings((s) => ({
+                            ...s,
+                            gridMode:
+                              s.gridMode === "horizontal"
+                                ? "vertical"
+                                : "horizontal",
+                          }))
+                        }
                         tabs={tabs}
                         flatFolders={flatFolders}
                         looseBookmarks={looseBookmarks}

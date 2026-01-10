@@ -1,7 +1,7 @@
-import React from 'react';
-import { ChevronDown } from 'lucide-react';
-import { Card } from './Card';
-import { Settings } from '../types';
+import React from "react";
+import { ChevronDown } from "lucide-react";
+import { Card } from "./Card";
+import { Settings } from "../types";
 
 interface SectionListProps {
   title: string;
