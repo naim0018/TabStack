@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder, FileText, Bell } from 'lucide-react';
+import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder, FileText, Bell, Trash2, Edit2 } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -17,6 +17,8 @@ interface SidebarProps {
   onSelectReminders: () => void;
   onSelectSpace: () => void;
   onCreateBoard: () => void;
+  onEditBoard?: (id: string, name: string) => void;
+  onDeleteBoard?: (id: string) => void;
 }
 
 export function Sidebar({
@@ -35,6 +37,8 @@ export function Sidebar({
   onSelectReminders,
   onSelectSpace,
   onCreateBoard,
+  onEditBoard,
+  onDeleteBoard,
 }: SidebarProps) {
   return (
     <aside
@@ -66,10 +70,10 @@ export function Sidebar({
 
       <nav className="flex flex-col gap-1 flex-1 min-h-0">
         <div className="flex flex-col gap-1 overflow-y-auto flex-1 no-scrollbar pb-4">
-          <div className="text-[10px] uppercase font-bold text-text-secondary/60 mb-2 px-3 tracking-widest {!collapsed ? '' : 'hidden'}">Library</div>
+          <div className={`text-[10px] uppercase font-bold text-text-secondary/60 mb-2 px-3 tracking-widest ${!collapsed ? '' : 'hidden'}`}>Library</div>
           {boards.map((board) => (
-            <div key={board.id} className="flex flex-col gap-0.5">
-                <button
+            <div key={board.id} className="group relative flex items-center gap-0.5">
+              <button
                 onClick={() => onSelectBoard(board.id)}
                 className={`
                     flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
@@ -81,10 +85,37 @@ export function Sidebar({
                     }
                 `}
                 title={board.name}
-                >
+              >
                 <Folder size={18} className="flex-shrink-0" />
-                {!collapsed && <span className="truncate">{board.name}</span>}
+                {!collapsed && <span className="truncate flex-1 text-left">{board.name}</span>}
+              </button>
+              
+              {!collapsed && onEditBoard && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const newName = prompt("Rename Board:", board.name);
+                    if (newName) onEditBoard(board.id, newName);
+                  }}
+                  className="absolute right-9 p-1.5 rounded-md text-text-secondary opacity-0 group-hover:opacity-100 hover:bg-border-card hover:text-text-primary transition-all"
+                  title="Rename Board"
+                >
+                  <Edit2 size={14} />
                 </button>
+              )}
+
+              {!collapsed && onDeleteBoard && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteBoard(board.id);
+                  }}
+                  className="absolute right-2 p-1.5 rounded-md text-text-secondary opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"
+                  title="Delete Board"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
           ))}
 

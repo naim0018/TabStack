@@ -5,9 +5,10 @@ import { Card, CardItem } from "./components/Card";
 import { EditModal, EditData } from "./components/EditModal";
 import { ConfirmationModal } from "./components/ConfirmationModal";
 import { chromeApi } from "./utils/chrome";
+import { Clock as ClockWidget, Calendar } from "./components/Widgets";
 import {
   ChevronDown,
-  Clock,
+  Clock as ClockIcon,
   LayoutGrid,
   AlertCircle,
   Info,
@@ -29,6 +30,7 @@ interface Settings {
   activeSidebarItem: string;
   boards: { id: string; name: string }[];
   collapsedSections: string[];
+  clockMode: "analog" | "digital";
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -40,6 +42,7 @@ const DEFAULT_SETTINGS: Settings = {
   activeSidebarItem: "spaces",
   boards: [{ id: "1", name: "Bookmark" }],
   collapsedSections: [],
+  clockMode: "digital",
 };
 
 const App = () => {
@@ -54,6 +57,7 @@ const App = () => {
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [now, setNow] = useState(Date.now());
+  const [tabStackFolderId, setTabStackFolderId] = useState<string | null>(null);
   const [notesFolderId, setNotesFolderId] = useState<string | null>(null);
   const [remindersFolderId, setRemindersFolderId] = useState<string | null>(null);
 
@@ -102,60 +106,106 @@ const App = () => {
       setMetadata(m);
       setTopSites(ts.slice(0, 10));
 
-      // Find or Create Notes Folder
-      let notesId: string | null = null;
-      const findNotesFolder = (nodes: any[]): any => {
+      const findFolder = (nodes: any[], title: string, parentId?: string): any => {
         for (let n of nodes) {
-          if (n.title === "TabStack Notes" && !n.url) return n;
+          if (n.title === title && !n.url && (!parentId || n.parentId === String(parentId))) return n;
           if (n.children) {
-            const f = findNotesFolder(n.children);
+            const f = findFolder(n.children, title, parentId);
             if (f) return f;
           }
         }
         return null;
       };
-      const notesFolder = findNotesFolder(tr);
-      if (notesFolder) {
-        notesId = notesFolder.id;
-      } else {
-        // Create it in Root (usually '1' is the Bookmarks Bar)
-        const created = await chromeApi.createBookmark({
-          parentId: "1",
-          title: "TabStack Notes",
-        });
-        notesId = created.id;
-      }
-      setNotesFolderId(notesId);
 
-      // Find or Create Reminders Folder
-      let remId: string | null = null;
-      const findRemindersFolder = (nodes: any[]): any => {
-        for (let n of nodes) {
-          if (n.title === "TabStack Reminders" && !n.url) return n;
-          if (n.children) {
-            const f = findRemindersFolder(n.children);
-            if (f) return f;
-          }
+      const rootNodes = tr[0]?.children || [];
+
+      // 1. Find or Create TabStack Parent Folder
+      let tsParent = findFolder(tr, "TabStack", "1");
+      if (!tsParent) {
+        // Fallback: search globally for folder named Exactly "TabStack"
+        tsParent = findFolder(tr, "TabStack");
+      }
+
+      if (!tsParent) {
+        isMoving.current = true;
+        tsParent = await chromeApi.createBookmark({
+          parentId: "1",
+          title: "TabStack",
+        });
+        isMoving.current = false;
+        // Re-fetch tree after creation to get children structure
+        const updatedTree = await chromeApi.getTree();
+        setTree(updatedTree);
+        tr[0] = updatedTree[0];
+      }
+      setTabStackFolderId(tsParent.id);
+
+      // 2. Find or Create Notes inside Parent
+      let notesFolderNode = findFolder(tsParent.children || [], "Notes", tsParent.id);
+      if (!notesFolderNode) {
+        const legacyNotes = findFolder(tr, "TabStack Notes");
+        if (legacyNotes) {
+          isMoving.current = true;
+          await chromeApi.moveBookmark(legacyNotes.id, { parentId: tsParent.id });
+          await chromeApi.updateBookmark(legacyNotes.id, { title: "Notes" });
+          isMoving.current = false;
+          notesFolderNode = { ...legacyNotes, parentId: tsParent.id, title: "Notes" };
+        } else {
+          isMoving.current = true;
+          notesFolderNode = await chromeApi.createBookmark({
+            parentId: tsParent.id,
+            title: "Notes",
+          });
+          isMoving.current = false;
         }
-        return null;
-      };
-      const remFolder = findRemindersFolder(tr);
-      if (remFolder) {
-        remId = remFolder.id;
-      } else {
-        const created = await chromeApi.createBookmark({
-          parentId: "1",
-          title: "TabStack Reminders",
-        });
-        remId = created.id;
       }
-      setRemindersFolderId(remId);
+      setNotesFolderId(notesFolderNode.id);
 
-      // Move existing reminders to the organized folder
+      // 3. Find or Create Reminders inside Parent
+      let remFolderNode = findFolder(tsParent.children || [], "Reminders", tsParent.id);
+      if (!remFolderNode) {
+        const legacyRem = findFolder(tr, "TabStack Reminders");
+        if (legacyRem) {
+          isMoving.current = true;
+          await chromeApi.moveBookmark(legacyRem.id, { parentId: tsParent.id });
+          await chromeApi.updateBookmark(legacyRem.id, { title: "Reminders" });
+          isMoving.current = false;
+          remFolderNode = { ...legacyRem, parentId: tsParent.id, title: "Reminders" };
+        } else {
+          isMoving.current = true;
+          remFolderNode = await chromeApi.createBookmark({
+            parentId: tsParent.id,
+            title: "Reminders",
+          });
+          isMoving.current = false;
+        }
+      }
+      setRemindersFolderId(remFolderNode.id);
+
+      // 4. Migrate legacy boards from Root to Parent
+      const legacyBoards = rootNodes.filter(
+        (n) =>
+          !n.url &&
+          n.title.startsWith("TabStack ") &&
+          n.title !== "TabStack" &&
+          n.title !== "TabStack Notes" &&
+          n.title !== "TabStack Reminders"
+      );
+      if (legacyBoards.length > 0 && !isMoving.current) {
+        isMoving.current = true;
+        for (const b of legacyBoards) {
+          const newTitle = b.title.replace(/^TabStack\s+/, "");
+          await chromeApi.moveBookmark(b.id, { parentId: tsParent.id });
+          await chromeApi.updateBookmark(b.id, { title: newTitle });
+        }
+        isMoving.current = false;
+      }
+
+      // 5. Move out-of-place reminders
       const outOfPlace: any[] = [];
       const findOutOfPlace = (nodes: any[]) => {
         for (let n of nodes) {
-          if (m[n.id]?.type === "reminder" && n.parentId !== remId) {
+          if (m[n.id]?.type === "reminder" && n.parentId !== remFolderNode.id) {
             outOfPlace.push(n);
           }
           if (n.children) findOutOfPlace(n.children);
@@ -166,29 +216,23 @@ const App = () => {
       if (outOfPlace.length > 0 && !isMoving.current) {
         isMoving.current = true;
         for (const item of outOfPlace) {
-          await chromeApi.moveBookmark(item.id, { parentId: remId });
+          await chromeApi.moveBookmark(item.id, { parentId: remFolderNode.id });
         }
         isMoving.current = false;
-        // The last move will trigger a refresh anyway via the listener, 
-        // but we ensure the flag is cleared.
       }
 
-      // After loading tree, ensure all boards exist in the actual bookmarks tree
+      // 6. Discover boards inside TabStack parent
       if (tr.length > 0) {
-        const rootBookmarks = tr[0].children || [];
-
-        // Auto-discover "TabStack" boards
-        const discoveredBoards = rootBookmarks
+        const tsChildren = tsParent.children || [];
+        const discoveredBoards = tsChildren
           .filter(
             (node: any) =>
               !node.url &&
-              node.title.startsWith("TabStack ") &&
-              node.title !== "TabStack Notes" &&
-              node.title !== "TabStack Reminders"
+              node.id !== notesFolderNode.id &&
+              node.id !== remFolderNode.id
           )
           .map((node: any) => ({ id: node.id, name: node.title }));
 
-        // Merge discovered with existing settings, avoiding duplicates
         const mergedBoards = [...settings.boards];
         discoveredBoards.forEach((d: any) => {
           if (!mergedBoards.find((b) => b.id === d.id)) {
@@ -196,32 +240,23 @@ const App = () => {
           }
         });
 
-        // Validate existence in tree (cleanup deleted boards)
+        // Validate existence
         const validBoards = mergedBoards.filter((b) => {
-           if (b.id === notesId || b.id === remId) return false;
-           // Check if it exists in root (since we only auto-discover from root)
-           // OR recursively check if we want to support nested boards (stick to root for now based on 'createBoard' logic)
-           const exists = rootBookmarks.find((n: any) => n.id === b.id);
-           // Also check recursively if it was a deep board (though auto-discover is shallow)
-           if (exists) return true;
-
-           // Fallback recursive check for pre-existing deep boards
-           const find = (nodes: any[]): any => {
+          if (b.id === notesFolderNode.id || b.id === remFolderNode.id) return false;
+          const findInTree = (nodes: any[]): any => {
             for (let n of nodes) {
               if (n.id === b.id) return n;
               if (n.children) {
-                const f = find(n.children);
+                const f = findInTree(n.children);
                 if (f) return f;
               }
             }
             return null;
           };
-          return find(rootBookmarks);
+          return findInTree(tr);
         });
 
-        if (
-          JSON.stringify(validBoards) !== JSON.stringify(settings.boards)
-        ) {
+        if (JSON.stringify(validBoards) !== JSON.stringify(settings.boards)) {
           setSettings((s) => ({ ...s, boards: validBoards }));
         }
       }
@@ -304,7 +339,7 @@ const App = () => {
     if (tree && tree.length > 0) {
       boardNode =
         findNode(tree[0].children || [], activeBoardId) ||
-        findNode(tree[0].children || [], "1");
+        (tabStackFolderId ? findNode(tree[0].children || [], tabStackFolderId) : findNode(tree[0].children || [], "1"));
     }
 
     const flat: any[] = [];
@@ -315,12 +350,12 @@ const App = () => {
       // Recursively collect all folders and all bookmarks
       const collect = (node: any, isRoot: boolean) => {
         if (node.children) {
-          // Skip the Notes folder if encountered
-          if (node.id === notesFolderId || node.id === remindersFolderId) return;
+          // Skip internal folders
+          if (node.id === notesFolderId || node.id === remindersFolderId || node.id === tabStackFolderId) return;
 
           if (!isRoot) flat.push(node);
           node.children.forEach((child: any) => {
-            if (child.id === notesFolderId || child.id === remindersFolderId) return; // Skip
+            if (child.id === notesFolderId || child.id === remindersFolderId || child.id === tabStackFolderId) return; // Skip
 
             if (!child.children) {
               all.push(child);
@@ -335,34 +370,38 @@ const App = () => {
     }
 
     return { flatFolders: flat, looseBookmarks: loose, allBookmarks: all };
-  }, [tree, settings.activeBoardId, notesFolderId]);
+  }, [tree, settings.activeBoardId, notesFolderId, remindersFolderId, tabStackFolderId]);
 
   const reminders = useMemo(() => {
-    const res: any[] = [];
-    Object.keys(metadata).forEach((id) => {
-      if (metadata[id].type === "reminder") {
-        const findInTree = (nodes: any[]): any => {
-          for (let n of nodes) {
-            if (n.id === id) return n;
-            if (n.children) {
-              const f = findInTree(n.children);
-              if (f) return f;
-            }
-          }
-          return null;
-        };
-        const item = findInTree(tree);
-        if (item) res.push({ ...item, ...metadata[id] });
+    if (!remindersFolderId || !tree || tree.length === 0) return [];
+    
+    const findFolderNode = (nodes: any[]): any => {
+      for (let n of nodes) {
+        if (n.id === remindersFolderId) return n;
+        if (n.children) {
+          const f = findFolderNode(n.children);
+          if (f) return f;
+        }
       }
-    });
-    return res.sort((a, b) => {
+      return null;
+    };
+
+    const folder = findFolderNode(tree);
+    if (!folder || !folder.children) return [];
+
+    return folder.children.map((n: any) => ({
+      ...n,
+      ...metadata[n.id],
+      type: "reminder",
+    }))
+    .sort((a: any, b: any) => {
       const da = a.deadline ? new Date(a.deadline).getTime() : 0;
       const db = b.deadline ? new Date(b.deadline).getTime() : 0;
       if (!da) return 1;
       if (!db) return -1;
       return da - db;
     });
-  }, [metadata, tree]);
+  }, [metadata, tree, remindersFolderId]);
 
   const notes = useMemo(() => {
     if (!notesFolderId || !tree || tree.length === 0) return [];
@@ -396,13 +435,23 @@ const App = () => {
     }));
   };
 
-  const deleteItem = (id: string) => {
+  const deleteItem = (id: string, isBoard = false) => {
+    if (id === tabStackFolderId || id === notesFolderId || id === remindersFolderId) {
+      alert("This is a core system folder and cannot be deleted.");
+      return;
+    }
+
     setConfirmState({
       isOpen: true,
-      title: "Delete Item",
-      message: "Are you sure you want to permanently delete this item?",
+      title: isBoard ? "Delete Board" : "Delete Item",
+      message: isBoard 
+        ? "Are you sure you want to delete this board and all its contents?"
+        : "Are you sure you want to permanently delete this item?",
       onConfirm: async () => {
         await chromeApi.removeTree(id);
+        if (isBoard && settings.activeBoardId === id) {
+          setSettings(s => ({ ...s, activeBoardId: tabStackFolderId || "1" }));
+        }
         refreshData();
       },
     });
@@ -456,14 +505,10 @@ const App = () => {
     const name = prompt("Enter Board Name:");
     if (!name) return;
 
-    const folderTitle = name.toLowerCase().startsWith("tabstack ")
-      ? name
-      : `TabStack ${name}`;
-
     try {
       const folder = await chromeApi.createBookmark({
-        parentId: "1",
-        title: folderTitle,
+        parentId: tabStackFolderId || "1",
+        title: name,
       });
 
       setSettings((s) => ({
@@ -653,6 +698,11 @@ const App = () => {
           setSettings((s) => ({ ...s, activeSidebarItem: "reminders" }))
         }
         onCreateBoard={handleCreateBoard}
+        onEditBoard={async (id, name) => {
+          await chromeApi.updateBookmark(id, { title: name });
+          refreshData();
+        }}
+        onDeleteBoard={(id) => deleteItem(id, true)}
       />
       <main className="flex-1 flex flex-col min-w-0 bg-bg relative">
         <TopBar
@@ -678,76 +728,77 @@ const App = () => {
         />
 
         <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
-          {/* Reminders Shelf */}
-          {settings.activeSidebarItem !== "spaces" &&
-            settings.activeSidebarItem !== "reminders" &&
-            reminders.length > 0 && (
-            <div
-              className={`mb-10 p-4 bg-gradient-to-br from-bg-card to-accent-glow/10 border border-border-card rounded-2xl backdrop-blur-md max-w-[1600px] mx-auto shadow-sm transition-all duration-300 ${
-                settings.collapsedSections.includes("reminders")
-                  ? "pb-4"
-                  : "pb-6"
-              }`}
-            >
-              <div
-                className="text-xs font-bold uppercase tracking-widest text-accent flex items-center justify-between cursor-pointer select-none"
-              >
-                <div className="flex items-center gap-2" onClick={() => handleToggleSection("reminders")}>
-                  <Clock size={16} /> Active Reminders{" "}
-                  <span className="text-[10px] opacity-50 bg-accent/10 px-1.5 py-0.5 rounded-full">
-                    {reminders.length}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <button 
-                    onClick={() => setSettings(s => ({ ...s, activeSidebarItem: 'reminders' }))}
-                    className="text-[10px] bg-accent/10 hover:bg-accent/20 px-2 py-1 rounded transition-colors"
-                  >
-                    View All
-                  </button>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr,340px] gap-10 items-start max-w-[1700px] mx-auto">
+            <div className="flex flex-col min-w-0">
+              {settings.activeSidebarItem !== "spaces" &&
+                settings.activeSidebarItem !== "reminders" &&
+                reminders.length > 0 && (
+                <div
+                  className={`mb-10 p-4 bg-gradient-to-br from-bg-card to-accent-glow/10 border border-border-card rounded-2xl backdrop-blur-md shadow-sm transition-all duration-300 ${
+                    settings.collapsedSections.includes("reminders")
+                      ? "pb-4"
+                      : "pb-6"
+                  }`}
+                >
                   <div
-                    onClick={() => handleToggleSection("reminders")}
-                    className={`transition-transform duration-300 ${
-                      settings.collapsedSections.includes("reminders")
-                        ? "-rotate-90"
-                        : ""
-                    }`}
+                    className="text-xs font-bold uppercase tracking-widest text-accent flex items-center justify-between cursor-pointer select-none"
                   >
-                    <ChevronDown size={14} />
+                    <div className="flex items-center gap-2" onClick={() => handleToggleSection("reminders")}>
+                      <ClockIcon size={16} /> Active Reminders{" "}
+                      <span className="text-[10px] opacity-50 bg-accent/10 px-1.5 py-0.5 rounded-full">
+                        {reminders.length}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <button 
+                        onClick={() => setSettings(s => ({ ...s, activeSidebarItem: 'reminders' }))}
+                        className="text-[10px] bg-accent/10 hover:bg-accent/20 px-2 py-1 rounded transition-colors"
+                      >
+                        View All
+                      </button>
+                      <div
+                        onClick={() => handleToggleSection("reminders")}
+                        className={`transition-transform duration-300 ${
+                          settings.collapsedSections.includes("reminders")
+                            ? "-rotate-90"
+                            : ""
+                        }`}
+                      >
+                        <ChevronDown size={14} />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {!settings.collapsedSections.includes("reminders") && (
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 mt-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300 max-h-[160px] overflow-hidden relative">
-                  {reminders.map((r: any) => (
-                      <Card
-                        key={r.id}
-                        item={r}
-                        now={now}
-                        onClick={() => {
-                          if (r.url && r.url !== "about:blank") {
-                            window.location.href = r.url;
-                          } else {
-                            setModalInitialData(r);
-                            setModalForceType("reminder");
-                            setIsModalOpen(true);
-                          }
-                        }}
-                        onEdit={() => {
-                          setModalInitialData(r);
-                          setModalForceType("reminder");
-                          setIsModalOpen(true);
-                        }}
-                        onDelete={() => deleteItem(r.id)}
-                      />
-                    ))}
+                  {!settings.collapsedSections.includes("reminders") && (
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 mt-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300 max-h-[160px] overflow-hidden relative">
+                      {reminders.map((r: any) => (
+                          <Card
+                            key={r.id}
+                            item={r}
+                            now={now}
+                            onClick={() => {
+                              if (r.url && r.url !== "about:blank") {
+                                window.location.href = r.url;
+                              } else {
+                                setModalInitialData(r);
+                                setModalForceType("reminder");
+                                setIsModalOpen(true);
+                              }
+                            }}
+                            onEdit={() => {
+                              setModalInitialData(r);
+                              setModalForceType("reminder");
+                              setIsModalOpen(true);
+                            }}
+                            onDelete={() => deleteItem(r.id)}
+                          />
+                        ))}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          <div className="max-w-[1600px] mx-auto">
+              <div className="w-full">
             {settings.activeSidebarItem === "spaces" ? (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="mb-6 flex items-center justify-between">
@@ -926,8 +977,7 @@ const App = () => {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr,340px] gap-10 items-start">
-                <div className="flex flex-col min-w-0">
+              <div className="w-full">
                   {settings.viewMode === "tabs" ? (
                     <div className="animate-in fade-in duration-300">
                       <div className="flex flex-wrap gap-2 px-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
@@ -938,30 +988,40 @@ const App = () => {
                             title: f.title,
                             count: f.children?.length || 0,
                           })),
-                        ].map((chip) => (
-                          <button
-                            key={chip.id}
-                            onClick={() =>
-                              setSettings((s) => ({ ...s, activeTab: chip.id }))
-                            }
-                            className={`px-3 py-1.5 rounded-lg border text-[12px] font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
-                              settings.activeTab === chip.id
-                                ? "bg-accent text-white border-accent shadow-md shadow-accent/10"
-                                : "bg-bg-card border-border-card text-text-secondary hover:text-text-primary hover:bg-border-card"
-                            }`}
-                          >
-                            {chip.title}
-                            <span
-                              className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-                                settings.activeTab === chip.id
-                                  ? "bg-white/20 text-white"
-                                  : "bg-bg text-text-secondary"
-                              }`}
+                        ].map((chip) => {
+                          const isActive = settings.activeTab === chip.id;
+                          const isCollapsed = settings.collapsedSections.includes(chip.id);
+                          
+                          return (
+                            <button
+                              key={chip.id}
+                              onClick={() => {
+                                if (isActive) {
+                                  handleToggleSection(chip.id);
+                                } else {
+                                  setSettings((s) => ({ ...s, activeTab: chip.id }));
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-lg border text-[12px] font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                                isActive
+                                  ? "bg-accent text-white border-accent shadow-md shadow-accent/10"
+                                  : "bg-bg-card border-border-card text-text-secondary hover:text-text-primary hover:bg-border-card"
+                              } ${isActive && isCollapsed ? "opacity-60 grayscale-[0.5]" : ""}`}
                             >
-                              {chip.count}
-                            </span>
-                          </button>
-                        ))}
+                              {chip.title}
+                              {isActive && isCollapsed && <ChevronDown size={12} className="-rotate-90" />}
+                              <span
+                                className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                                  isActive
+                                    ? "bg-white/20 text-white"
+                                    : "bg-bg text-text-secondary"
+                                }`}
+                              >
+                                {chip.count}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
 
                       <div
@@ -971,66 +1031,68 @@ const App = () => {
                           handleDrop(e, settings.activeTab)
                         }
                       >
-                        <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
-                          {(settings.activeTab === "tabs"
-                            ? tabs
-                            : flatFolders.find(
-                                (f: any) =>
-                                  String(f.id) === String(settings.activeTab)
-                              )?.children || []
-                          ).map((item: any) => (
-                            <Card
-                              key={item.id}
-                              item={{ ...item, ...metadata[item.id] }}
-                              now={now}
-                              isTab={settings.activeTab === "tabs"}
-                              onClick={() => {
-                                if (settings.activeTab === "tabs") {
-                                  chromeApi.activateTab(item.id);
-                                } else if (item.children) {
-                                  setSettings((s) => ({
-                                    ...s,
-                                    activeTab: String(item.id),
-                                  }));
-                                } else if (item.url) {
-                                  window.location.href = item.url;
+                        {!settings.collapsedSections.includes(settings.activeTab) ? (
+                          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 animate-in fade-in zoom-in-95 duration-200">
+                            {(settings.activeTab === "tabs"
+                              ? tabs
+                              : flatFolders.find(
+                                  (f: any) =>
+                                    String(f.id) === String(settings.activeTab)
+                                )?.children || []
+                            ).map((item: any) => (
+                              <Card
+                                key={item.id}
+                                item={{ ...item, ...metadata[item.id] }}
+                                now={now}
+                                isTab={settings.activeTab === "tabs"}
+                                onClick={() => {
+                                  if (settings.activeTab === "tabs") {
+                                    chromeApi.activateTab(item.id);
+                                  } else if (item.children) {
+                                    setSettings((s) => ({
+                                      ...s,
+                                      activeTab: String(item.id),
+                                    }));
+                                  } else if (item.url) {
+                                    window.location.href = item.url;
+                                  }
+                                }}
+                                onEdit={() => {
+                                  setModalInitialData({
+                                    ...item,
+                                    ...metadata[item.id],
+                                    type:
+                                      item.children || item.type === "folder"
+                                        ? "folder"
+                                        : metadata[item.id]?.type || "bookmark",
+                                  });
+                                  setModalForceType(null);
+                                  setIsModalOpen(true);
+                                }}
+                                onDelete={() =>
+                                  settings.activeTab === "tabs"
+                                    ? chromeApi.closeTab(item.id)
+                                    : deleteItem(item.id)
                                 }
-                              }}
-                              onEdit={() => {
-                                setModalInitialData({
-                                  ...item,
-                                  ...metadata[item.id],
-                                  type:
-                                    item.children || item.type === "folder"
-                                      ? "folder"
-                                      : metadata[item.id]?.type || "bookmark",
-                                });
-                                setModalForceType(null);
-                                setIsModalOpen(true);
-                              }}
-                              onDelete={() =>
-                                settings.activeTab === "tabs"
-                                  ? chromeApi.closeTab(item.id)
-                                  : deleteItem(item.id)
-                              }
-                              onClose={() => chromeApi.closeTab(item.id)}
-                              onDragStart={(e) =>
-                                handleDragStart(e, String(item.id))
-                              }
-                            />
-                          ))}
-                          {(settings.activeTab === "tabs"
-                            ? tabs
-                            : flatFolders.find(
-                                (f: any) =>
-                                  String(f.id) === String(settings.activeTab)
-                              )?.children || []
-                          ).length === 0 && (
-                            <div className="col-span-full py-20 text-center text-text-secondary border-2 border-dashed border-border-card rounded-3xl opacity-40">
-                              No items found in this section
-                            </div>
-                          )}
-                        </div>
+                                onClose={() => chromeApi.closeTab(item.id)}
+                                onDragStart={(e) =>
+                                  handleDragStart(e, String(item.id))
+                                }
+                              />
+                            ))}
+                            {(settings.activeTab === "tabs"
+                              ? tabs
+                              : flatFolders.find(
+                                  (f: any) =>
+                                    String(f.id) === String(settings.activeTab)
+                                )?.children || []
+                            ).length === 0 && (
+                              <div className="col-span-full py-20 text-center text-text-secondary border-2 border-dashed border-border-card rounded-3xl opacity-40">
+                                No items found in this section
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   ) : (
@@ -1050,9 +1112,23 @@ const App = () => {
                     </div>
                   )}
                 </div>
+              )}
+            </div>
+          </div>
 
-                <aside className="flex flex-col gap-8 sticky top-4 h-fit max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar pb-10">
-                  {topSites.length > 0 && (
+          <aside className="flex flex-col gap-6 sticky top-4 h-fit max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar pb-10">
+            <div className="bg-bg-card/20 rounded-3xl flex flex-col gap-4 shadow-sm backdrop-blur-sm">
+            <div className="border border-border-card rounded-xl p-6 bg-gradient-to-br from-bg-card to-accent-glow/5 h-[250px] overflow-y-auto">
+              <ClockWidget 
+                now={now} 
+                mode={settings.clockMode} 
+                onToggle={() => setSettings(s => ({ ...s, clockMode: s.clockMode === 'digital' ? 'analog' : 'digital' }))}
+              />
+            </div>
+              <Calendar />
+            </div>
+
+            {topSites.length > 0 && (
                     <div className="w-full">
                       <div
                         className="flex items-center gap-2 mb-4 cursor-pointer select-none group/title"
@@ -1101,13 +1177,11 @@ const App = () => {
                       )}
                     </div>
                   )}
-                  {renderSection("Quick Links", looseBookmarks, "loose")}
-                </aside>
-              </div>
-            )}
-          </div>
+            {renderSection("Quick Links", looseBookmarks, "loose")}
+          </aside>
         </div>
-      </main>
+      </div>
+    </main>
 
       <EditModal
         isOpen={isModalOpen}

@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Firefox */
+html {
+  scrollbar-width: none;
+}
+
+/* IE / legacy Edge */
+body {
+  -ms-overflow-style: none;
+}
+
 @layer base {
   :root {
     /* Soft Dark Mode (Default) */
