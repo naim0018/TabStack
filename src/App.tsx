@@ -6,7 +6,7 @@ import { EditModal, EditData } from "./components/EditModal";
 import { ConfirmationModal } from "./components/ConfirmationModal";
 import { chromeApi } from "./utils/chrome";
 import { Clock as ClockWidget, Calendar } from "./components/Widgets";
-import { GoogleSearch } from "./components/GoogleSearch";
+
 import {
   ChevronDown,
   Clock as ClockIcon,
@@ -778,7 +778,7 @@ const App = () => {
 
         <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
           <div className="max-w-[1700px] mx-auto">
-            <GoogleSearch />
+
             
             <div className="grid grid-cols-1 lg:grid-cols-[1fr,340px] gap-10 items-start">
               <div className="flex flex-col min-w-0">
