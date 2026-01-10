@@ -21,7 +21,7 @@ export const Clock: React.FC<ClockProps> = ({ now, mode, onToggle }) => {
     return (
       <div 
         onClick={onToggle}
-        className="relative w-full aspect-square max-w-[200px] mx-auto bg-bg-card rounded-full border-4 border-border-card shadow-2xl flex items-center justify-center cursor-pointer group hover:border-accent/30 transition-all duration-500"
+        className="glass relative w-[200px] h-[200px] mx-auto bg-bg-card rounded-full border-4 border-border-card shadow-2xl flex items-center justify-center cursor-pointer group hover:border-accent/30 transition-all duration-500"
       >
         {/* Hour Hand */}
         <div 
@@ -86,15 +86,15 @@ export const Clock: React.FC<ClockProps> = ({ now, mode, onToggle }) => {
   return (
     <div 
       onClick={onToggle}
-      className="h-full flex flex-col items-center justify-center cursor-pointer group hover:border-accent/40 transition-all duration-300 shadow-sm"
+      className="w-[200px] h-[200px] mx-auto flex flex-col items-center justify-center cursor-pointer group hover:border-accent/40 transition-all duration-300 shadow-sm"
     >
-      <div className="text-4xl font-black text-text-primary tracking-tighter group-hover:scale-105 transition-transform font-mono">
+      <div className="text-3xl font-black text-text-primary tracking-tighter group-hover:scale-105 transition-transform font-mono">
         {timeStr}
       </div>
       <div className="text-xs font-bold text-accent uppercase tracking-widest mt-2 opacity-80">
         {dateStr}
       </div>
-      <div className="mt-4 text-[10px] uppercase font-black tracking-widest text-text-secondary/30 flex items-center gap-2">
+      <div className="mt-3 text-[10px] uppercase font-black tracking-widest text-text-secondary/30 flex items-center gap-2">
         <ClockIcon size={12} /> Click to Switch to Analog
       </div>
     </div>
@@ -125,8 +125,8 @@ export const Calendar: React.FC = () => {
   };
 
   return (
-    <div className="p-5 bg-bg-card border border-border-card rounded-2xl shadow-sm">
-      <div className="flex items-center justify-between mb-4">
+    <div className="glass w-[300px] mx-auto p-4 bg-bg-card border border-border-card rounded-2xl shadow-sm">
+      <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-black text-text-primary uppercase tracking-tight flex items-center gap-2">
           <CalendarIcon size={16} className="text-accent" />
           <span className="min-w-[120px]">{monthNames[currentMonth]} {currentYear}</span>

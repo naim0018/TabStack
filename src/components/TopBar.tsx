@@ -9,6 +9,7 @@ interface TopBarProps {
   onCreate: (type: "bookmark" | "folder") => void;
   onAddReminder: () => void;
   tabCount: number;
+  hasBackground?: boolean;
 }
 
   /* 
@@ -24,6 +25,7 @@ interface TopBarProps {
     onCreate,      // Function to open modal for creating Bookmarks/Folders
     onAddReminder, // Function to open modal for creating Reminders
     tabCount,      // (Unused in visual) Number of active tabs
+    hasBackground,
   }: TopBarProps) {
     
     // Reference to the search input element to access its value directly
@@ -31,7 +33,7 @@ interface TopBarProps {
   
     return (
       /* Main Header Container - Fixed at top, blurred background */
-      <header className="h-[74px] px-8 border-b border-border-card bg-bg-header backdrop-blur-md sticky top-0 z-[50] flex items-center justify-between">
+      <header className={`h-[74px] px-8 border-b backdrop-blur-md sticky top-0 z-[50] flex items-center justify-between ${hasBackground ? 'bg-white/70 dark:bg-black/10 border-white/20 dark:border-white/10' : 'bg-bg-header border-border-card'}`}>
         <div className="w-full max-w-[1680px] mx-auto flex items-center h-full">
           
           {/* =================================================================
@@ -101,9 +103,12 @@ interface TopBarProps {
                 title="Add Bookmark"
               >
                 <Plus
-                  size={18}
+                  size={20}
                   className="text-accent group-hover:scale-110 transition-transform"
                 />
+                <span className="text-[12px] text-gray-200 font-medium uppercase tracking-widest hidden sm:inline">
+                  Add Bookmark
+                </span>
               </button>
   
               <button
@@ -112,9 +117,12 @@ interface TopBarProps {
                 title="New Folder"
               >
                 <Folder
-                  size={18}
+                  size={20}
                   className="text-accent group-hover:scale-110 transition-transform"
                 />
+                <span className="text-[12px] text-gray-200 font-medium uppercase tracking-widest hidden sm:inline">
+                  New Folder
+                </span>
               </button>
   
               <button
@@ -123,30 +131,30 @@ interface TopBarProps {
                 title="Add Reminder"
               >
                 <Bell
-                  size={18}
+                  size={20}
                   className="text-accent group-hover:scale-110 transition-transform"
                 />
+                <span className="text-[12px] text-gray-200 font-medium uppercase tracking-widest hidden sm:inline">
+                  Add Reminder
+                </span>
               </button>
             </div>
   
             {/* Vertical Divider */}
-            <div className="h-8 w-px bg-border-card/60" />
+            <div className="h-8 w-px bg-white/40 " />
   
             {/* View Mode Toggle (Grid vs Tabs) */}
-            <button
+            {/* <button
               onClick={onViewValues}
               className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-text-secondary hover:text-text-primary group shadow-sm"
             >
               {viewMode === "feed" ? <Grid size={18} className="text-accent" /> : <Layout size={18} className="text-accent" />}
-              <span className="text-[12px] font-bold uppercase tracking-widest hidden sm:inline">
+              <span className="text-[12px] text-accent font-bold uppercase tracking-widest hidden sm:inline">
                 {viewMode === "feed" ? "Grid" : "Tabs"}
               </span>
-            </button>
+            </button> */}
   
-            {/* Vertical Divider */}
-            <div className="h-8 w-px bg-border-card/60 mr-2" />
-  
-            {/* Google Apps Menu (9-dot menu & Avatar) */}
+            {/* Google Apps Menu */}
             <GoogleMenu />
           </div>
         </div>

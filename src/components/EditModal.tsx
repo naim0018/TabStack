@@ -46,7 +46,7 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-bg-sidebar border border-border-card rounded-2xl w-[440px] p-8 shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+      <div className="glass bg-bg-sidebar border border-border-card rounded-2xl w-[440px] p-8 shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
         <div className="mb-6">
           <h2 className="text-2xl font-bold tracking-tight text-text-primary">
             {initialData ? 'Edit Item' : 'New Item'}

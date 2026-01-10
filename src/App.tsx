@@ -1,50 +1,21 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
-import { Card, CardItem } from "./components/Card";
+import { Card } from "./components/Card";
 import { EditModal, EditData } from "./components/EditModal";
 import { ConfirmationModal } from "./components/ConfirmationModal";
 import { chromeApi } from "./utils/chrome";
-import { Clock as ClockWidget, Calendar } from "./components/Widgets";
+import { DashboardView } from "./pages/DashboardView";
+import { SpacesView } from "./pages/SpacesView";
+import { NotesView } from "./pages/NotesView";
+import { RemindersView } from "./pages/RemindersView";
+import { BookmarksView } from "./pages/BookmarksView";
+import { BackgroundSettings } from "./pages/BackgroundSettings";
+import { SectionList } from "./components/SectionList";
+import { Settings, DEFAULT_SETTINGS, BookmarkItem } from "./types";
+import { Clock as ClockWidget, Calendar } from './components/Widgets';
 
-import {
-  ChevronDown,
-  Clock as ClockIcon,
-  LayoutGrid,
-  AlertCircle,
-  Info,
-  Edit2,
-  Trash2,
-  Bell,
-  Plus,
-  Folder,
-  FileText,
-} from "lucide-react";
-
-// Settings interface
-interface Settings {
-  theme: "dark" | "light";
-  sidebarCollapsed: boolean;
-  viewMode: "feed" | "tabs";
-  activeTab: string;
-  activeBoardId: string;
-  activeSidebarItem: string;
-  boards: { id: string; name: string }[];
-  collapsedSections: string[];
-  clockMode: "analog" | "digital";
-}
-
-const DEFAULT_SETTINGS: Settings = {
-  theme: "dark",
-  sidebarCollapsed: false,
-  viewMode: "feed",
-  activeTab: "tabs",
-  activeBoardId: "1",
-  activeSidebarItem: "spaces",
-  boards: [{ id: "1", name: "Bookmark" }],
-  collapsedSections: [],
-  clockMode: "digital",
-};
+import { ChevronDown, ExternalLink, Folder } from "lucide-react";
 
 // --- Sync Helpers ---
 const encodeMetaToUrl = (url: string, meta: any) => {
@@ -78,6 +49,7 @@ const decodeMetaFromUrl = (url: string) => {
 // --------------------
 
 const App = () => {
+  // ... logic ...
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
 
@@ -91,7 +63,9 @@ const App = () => {
   const [now, setNow] = useState(Date.now());
   const [tabStackFolderId, setTabStackFolderId] = useState<string | null>(null);
   const [notesFolderId, setNotesFolderId] = useState<string | null>(null);
-  const [remindersFolderId, setRemindersFolderId] = useState<string | null>(null);
+  const [remindersFolderId, setRemindersFolderId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -138,9 +112,18 @@ const App = () => {
       setMetadata(m);
       setTopSites(ts.slice(0, 10));
 
-      const findFolder = (nodes: any[], title: string, parentId?: string): any => {
+      const findFolder = (
+        nodes: any[],
+        title: string,
+        parentId?: string
+      ): any => {
         for (let n of nodes) {
-          if (n.title === title && !n.url && (!parentId || n.parentId === String(parentId))) return n;
+          if (
+            n.title === title &&
+            !n.url &&
+            (!parentId || n.parentId === String(parentId))
+          )
+            return n;
           if (n.children) {
             const f = findFolder(n.children, title, parentId);
             if (f) return f;
@@ -173,15 +156,25 @@ const App = () => {
       setTabStackFolderId(tsParent.id);
 
       // 2. Find or Create Notes inside Parent
-      let notesFolderNode = findFolder(tsParent.children || [], "Notes", tsParent.id);
+      let notesFolderNode = findFolder(
+        tsParent.children || [],
+        "Notes",
+        tsParent.id
+      );
       if (!notesFolderNode) {
         const legacyNotes = findFolder(tr, "TabStack Notes");
         if (legacyNotes) {
           isMoving.current = true;
-          await chromeApi.moveBookmark(legacyNotes.id, { parentId: tsParent.id });
+          await chromeApi.moveBookmark(legacyNotes.id, {
+            parentId: tsParent.id,
+          });
           await chromeApi.updateBookmark(legacyNotes.id, { title: "Notes" });
           isMoving.current = false;
-          notesFolderNode = { ...legacyNotes, parentId: tsParent.id, title: "Notes" };
+          notesFolderNode = {
+            ...legacyNotes,
+            parentId: tsParent.id,
+            title: "Notes",
+          };
         } else {
           isMoving.current = true;
           notesFolderNode = await chromeApi.createBookmark({
@@ -194,7 +187,11 @@ const App = () => {
       setNotesFolderId(notesFolderNode.id);
 
       // 3. Find or Create Reminders inside Parent
-      let remFolderNode = findFolder(tsParent.children || [], "Reminders", tsParent.id);
+      let remFolderNode = findFolder(
+        tsParent.children || [],
+        "Reminders",
+        tsParent.id
+      );
       if (!remFolderNode) {
         const legacyRem = findFolder(tr, "TabStack Reminders");
         if (legacyRem) {
@@ -202,7 +199,11 @@ const App = () => {
           await chromeApi.moveBookmark(legacyRem.id, { parentId: tsParent.id });
           await chromeApi.updateBookmark(legacyRem.id, { title: "Reminders" });
           isMoving.current = false;
-          remFolderNode = { ...legacyRem, parentId: tsParent.id, title: "Reminders" };
+          remFolderNode = {
+            ...legacyRem,
+            parentId: tsParent.id,
+            title: "Reminders",
+          };
         } else {
           isMoving.current = true;
           remFolderNode = await chromeApi.createBookmark({
@@ -274,7 +275,8 @@ const App = () => {
 
         // Validate existence
         const validBoards = mergedBoards.filter((b) => {
-          if (b.id === notesFolderNode.id || b.id === remFolderNode.id) return false;
+          if (b.id === notesFolderNode.id || b.id === remFolderNode.id)
+            return false;
           const findInTree = (nodes: any[]): any => {
             for (let n of nodes) {
               if (n.id === b.id) return n;
@@ -301,7 +303,8 @@ const App = () => {
     const loadInitialSettings = async () => {
       const syncedSettings = await chromeApi.getSettings(DEFAULT_SETTINGS);
       if (syncedSettings) {
-        if (!syncedSettings.boards) syncedSettings.boards = DEFAULT_SETTINGS.boards;
+        if (!syncedSettings.boards)
+          syncedSettings.boards = DEFAULT_SETTINGS.boards;
         setSettings(syncedSettings);
       }
       setIsSettingsLoaded(true);
@@ -316,10 +319,10 @@ const App = () => {
       chrome.bookmarks.onRemoved.addListener(handler);
       chrome.bookmarks.onChanged.addListener(handler);
       chrome.bookmarks.onMoved.addListener(handler);
-      
+
       // Listen for storage changes (sync across devices)
       const storageHandler = (changes: any, area: string) => {
-        if (area === 'sync') {
+        if (area === "sync") {
           if (changes.appSettings) {
             setSettings(changes.appSettings.newValue);
           }
@@ -371,7 +374,9 @@ const App = () => {
     if (tree && tree.length > 0) {
       boardNode =
         findNode(tree[0].children || [], activeBoardId) ||
-        (tabStackFolderId ? findNode(tree[0].children || [], tabStackFolderId) : findNode(tree[0].children || [], "1"));
+        (tabStackFolderId
+          ? findNode(tree[0].children || [], tabStackFolderId)
+          : findNode(tree[0].children || [], "1"));
     }
 
     const flat: any[] = [];
@@ -383,11 +388,21 @@ const App = () => {
       const collect = (node: any, isRoot: boolean) => {
         if (node.children) {
           // Skip internal folders
-          if (node.id === notesFolderId || node.id === remindersFolderId || node.id === tabStackFolderId) return;
+          if (
+            node.id === notesFolderId ||
+            node.id === remindersFolderId ||
+            node.id === tabStackFolderId
+          )
+            return;
 
           if (!isRoot) flat.push(node);
           node.children.forEach((child: any) => {
-            if (child.id === notesFolderId || child.id === remindersFolderId || child.id === tabStackFolderId) return; // Skip
+            if (
+              child.id === notesFolderId ||
+              child.id === remindersFolderId ||
+              child.id === tabStackFolderId
+            )
+              return; // Skip
 
             const urlMeta = decodeMetaFromUrl(child.url);
             const enriched = { ...child, ...urlMeta, ...metadata[child.id] };
@@ -405,11 +420,17 @@ const App = () => {
     }
 
     return { flatFolders: flat, looseBookmarks: loose, allBookmarks: all };
-  }, [tree, settings.activeBoardId, notesFolderId, remindersFolderId, tabStackFolderId]);
+  }, [
+    tree,
+    settings.activeBoardId,
+    notesFolderId,
+    remindersFolderId,
+    tabStackFolderId,
+  ]);
 
   const reminders = useMemo(() => {
     if (!remindersFolderId || !tree || tree.length === 0) return [];
-    
+
     const findFolderNode = (nodes: any[]): any => {
       for (let n of nodes) {
         if (n.id === remindersFolderId) return n;
@@ -424,22 +445,23 @@ const App = () => {
     const folder = findFolderNode(tree);
     if (!folder || !folder.children) return [];
 
-    return folder.children.map((n: any) => {
-      const urlMeta = decodeMetaFromUrl(n.url);
-      return {
-        ...n,
-        ...urlMeta,
-        ...metadata[n.id],
-        type: "reminder",
-      };
-    })
-    .sort((a: any, b: any) => {
-      const da = a.deadline ? new Date(a.deadline).getTime() : 0;
-      const db = b.deadline ? new Date(b.deadline).getTime() : 0;
-      if (!da) return 1;
-      if (!db) return -1;
-      return da - db;
-    });
+    return folder.children
+      .map((n: any) => {
+        const urlMeta = decodeMetaFromUrl(n.url);
+        return {
+          ...n,
+          ...urlMeta,
+          ...metadata[n.id],
+          type: "reminder",
+        };
+      })
+      .sort((a: any, b: any) => {
+        const da = a.deadline ? new Date(a.deadline).getTime() : 0;
+        const db = b.deadline ? new Date(b.deadline).getTime() : 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return da - db;
+      });
   }, [metadata, tree, remindersFolderId]);
 
   const notes = useMemo(() => {
@@ -478,8 +500,19 @@ const App = () => {
     }));
   };
 
+  const handleToggleClockMode = () => {
+    setSettings((s) => ({
+      ...s,
+      clockMode: s.clockMode === "digital" ? "analog" : "digital",
+    }));
+  };
+
   const deleteItem = (id: string, isBoard = false) => {
-    if (id === tabStackFolderId || id === notesFolderId || id === remindersFolderId) {
+    if (
+      id === tabStackFolderId ||
+      id === notesFolderId ||
+      id === remindersFolderId
+    ) {
       alert("This is a core system folder and cannot be deleted.");
       return;
     }
@@ -487,13 +520,16 @@ const App = () => {
     setConfirmState({
       isOpen: true,
       title: isBoard ? "Delete Board" : "Delete Item",
-      message: isBoard 
+      message: isBoard
         ? "Are you sure you want to delete this board and all its contents?"
         : "Are you sure you want to permanently delete this item?",
       onConfirm: async () => {
         await chromeApi.removeTree(id);
         if (isBoard && settings.activeBoardId === id) {
-          setSettings(s => ({ ...s, activeBoardId: tabStackFolderId || "1" }));
+          setSettings((s) => ({
+            ...s,
+            activeBoardId: tabStackFolderId || "1",
+          }));
         }
         refreshData();
       },
@@ -520,9 +556,10 @@ const App = () => {
             parentId === "tabs" || parentId === "Space" ? "1" : parentId,
           title,
         };
-        
+
         // Encode metadata into URL for robust sync
-        const baseUrl = url || (type === "reminder" || type === "note" ? "about:blank" : "");
+        const baseUrl =
+          url || (type === "reminder" || type === "note" ? "about:blank" : "");
         if (type !== "folder") {
           createParams.url = encodeMetaToUrl(baseUrl, metaToSave);
         }
@@ -603,650 +640,367 @@ const App = () => {
     setDraggingId(null);
   };
 
-  const renderSection = (
-    title: string,
-    items: any[],
-    id: string,
-    isTabSection = false
-  ) => {
-    if (!items || items.length === 0) return null;
-    const filteredItems = searchQuery
-      ? items.filter((i) =>
-          i.title.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      : items;
-    if (filteredItems.length === 0 && searchQuery) return null;
-
-    const isCollapsed = settings.collapsedSections.includes(id);
-
-    return (
-      <div
-        id={`section-${id}`}
-        className={`mb-8 w-full group/section transition-all ${
-          draggingId ? "scale-[0.99] opacity-80" : ""
-        }`}
-        onDragOver={(e) => {
-          e.preventDefault();
-        }}
-        onDrop={(e) => !isTabSection && handleDrop(e, id)}
-      >
-        <div
-          className="flex items-center gap-2 mb-4 cursor-pointer select-none"
-          onClick={() => handleToggleSection(id)}
-        >
-          <div
-            className={`p-1 rounded-md text-text-secondary hover:bg-border-card transition-all ${
-              isCollapsed ? "-rotate-90" : ""
-            }`}
-          >
-            <ChevronDown size={14} />
-          </div>
-          <h3 className="text-[14px] font-bold text-text-primary/90 flex items-center gap-2 uppercase tracking-tight">
-            {title}
-            <span className="text-text-secondary text-xs font-medium opacity-40 ml-1 bg-border-card px-1.5 rounded-full">
-              {items.length}
-            </span>
-          </h3>
-        </div>
-
-        {!isCollapsed && (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-            {filteredItems.map((item: any) => (
-              <Card
-                key={item.id || item.title}
-                item={item}
-                now={now}
-                isTab={isTabSection}
-                onClick={() => {
-                  if (isTabSection) {
-                    chromeApi.activateTab(item.id);
-                  } else if (item.children) {
-                    const section = document.getElementById(
-                      `section-${item.id}`
-                    );
-                    if (section) {
-                      section.scrollIntoView({ behavior: "smooth" });
-                      if (
-                        settings.collapsedSections.includes(String(item.id))
-                      ) {
-                        handleToggleSection(String(item.id));
-                      }
-                    }
-                  } else if (item.url) {
-                    window.location.href = item.url;
-                  }
-                }}
-                onEdit={() => {
-                  setModalInitialData({
-                    ...item,
-                    ...metadata[item.id],
-                    type:
-                      item.children || item.type === "folder"
-                        ? "folder"
-                        : metadata[item.id]?.type || "bookmark",
-                  });
-                  setModalForceType(null);
-                  setIsModalOpen(true);
-                }}
-                onDelete={() =>
-                  isTabSection
-                    ? chromeApi.closeTab(item.id)
-                    : deleteItem(item.id)
-                }
-                onClose={() => chromeApi.closeTab(item.id)}
-                onDragStart={(e) => handleDragStart(e, String(item.id))}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
+  /*
+   * Handle Click on Card Items
+   * - Tabs: Activate tab
+   * - Folders: Scroll to section and expand if collapsed
+   * - Bookmarks: Navigate to URL
+   */
+  const handleCardClick = (item: any, isTab = false) => {
+    if (isTab) {
+      chromeApi.activateTab(item.id);
+    } else if (item.children) {
+      const section = document.getElementById(`section-${item.id}`);
+      if (section) {
+        section.scrollIntoView({ behavior: "smooth" });
+        // If collapsed, expand it
+        if (settings.collapsedSections.includes(String(item.id))) {
+          handleToggleSection(String(item.id));
+        }
+      }
+    } else if (item.url) {
+      // Direct navigation
+      window.location.href = item.url;
+    }
   };
 
   return (
-    <div className="flex h-screen bg-bg text-text-primary font-sans overflow-hidden transition-colors duration-300 selection:bg-accent/30">
-      <Sidebar
-        collapsed={settings.sidebarCollapsed}
-        theme={settings.theme}
-        boards={settings.boards}
-        activeBoardId={settings.activeBoardId}
-        activeTabId={settings.activeTab}
-        activeSidebarItem={settings.activeSidebarItem}
-        onToggleSidebar={() =>
-          setSettings((s) => ({ ...s, sidebarCollapsed: !s.sidebarCollapsed }))
-        }
-        onToggleTheme={() =>
-          setSettings((s) => ({
-            ...s,
-            theme: s.theme === "light" ? "dark" : "light",
-          }))
-        }
-        onSelectBoard={(id) =>
-          setSettings((s) => ({
-            ...s,
-            activeBoardId: id,
-            activeSidebarItem: "bookmarks",
-            activeTab: "tabs",
-          }))
-        }
-        onSelectFolder={(id) =>
-          setSettings((s) => ({
-            ...s,
-            activeTab: id,
-            activeSidebarItem: "bookmarks",
-          }))
-        }
-        onSelectSpace={() =>
-          setSettings((s) => ({ ...s, activeSidebarItem: "spaces" }))
-        }
-        onSelectNotes={() =>
-          setSettings((s) => ({ ...s, activeSidebarItem: "notes" }))
-        }
-        onSelectReminders={() =>
-          setSettings((s) => ({ ...s, activeSidebarItem: "reminders" }))
-        }
-        onCreateBoard={handleCreateBoard}
-        onEditBoard={async (id, name) => {
-          await chromeApi.updateBookmark(id, { title: name });
-          refreshData();
-        }}
-        onDeleteBoard={(id) => deleteItem(id, true)}
-        onSearch={setSearchQuery}
-      />
-      <main className="flex-1 flex flex-col min-w-0 bg-bg relative">
-        <TopBar
-          onSearch={setSearchQuery}
-          onViewValues={() =>
+    <div className="relative flex h-screen bg-bg text-text-primary font-sans overflow-hidden transition-colors duration-300 selection:bg-accent/30">
+      {settings.backgroundImage && (
+        <div
+          className="absolute inset-0 z-0 pointer-events-none transition-all duration-500"
+          style={{
+            backgroundImage: `url(${settings.backgroundImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: (settings.backgroundOpacity || 50) / 100,
+            filter: `blur(${settings.backgroundBlur || 0}px)`,
+          }}
+        />
+      )}
+
+      <div className="relative z-10 flex h-full w-full">
+        <Sidebar
+          collapsed={settings.sidebarCollapsed}
+          theme={settings.theme}
+          boards={settings.boards}
+          activeBoardId={settings.activeBoardId}
+          activeTabId={settings.activeTab}
+          activeSidebarItem={settings.activeSidebarItem}
+          hasBackground={!!settings.backgroundImage}
+          onToggleSidebar={() =>
             setSettings((s) => ({
               ...s,
-              viewMode: s.viewMode === "feed" ? "tabs" : "feed",
+              sidebarCollapsed: !s.sidebarCollapsed,
             }))
           }
-          viewMode={settings.viewMode}
-          onCreate={(type) => {
-            setModalForceType(type);
-            setModalInitialData(null);
-            setIsModalOpen(true);
+          onToggleTheme={() =>
+            setSettings((s) => ({
+              ...s,
+              theme: s.theme === "light" ? "dark" : "light",
+            }))
+          }
+          onSelectBoard={(id) =>
+            setSettings((s) => ({
+              ...s,
+              activeBoardId: id,
+              activeSidebarItem: "bookmarks",
+              activeTab: "tabs",
+            }))
+          }
+          onSelectFolder={(id) =>
+            setSettings((s) => ({
+              ...s,
+              activeTab: id,
+              activeSidebarItem: "bookmarks",
+            }))
+          }
+          onSelectSpace={() =>
+            setSettings((s) => ({ ...s, activeSidebarItem: "spaces" }))
+          }
+          onSelectNotes={() =>
+            setSettings((s) => ({ ...s, activeSidebarItem: "notes" }))
+          }
+          onSelectReminders={() =>
+            setSettings((s) => ({ ...s, activeSidebarItem: "reminders" }))
+          }
+          onSelectDashboard={() =>
+            setSettings((s) => ({ ...s, activeSidebarItem: "dashboard" }))
+          }
+          onSelectBackground={() =>
+            setSettings((s) => ({ ...s, activeSidebarItem: "background" }))
+          }
+          onCreateBoard={handleCreateBoard}
+          onEditBoard={async (id, name) => {
+            await chromeApi.updateBookmark(id, { title: name });
+            refreshData();
           }}
-          onAddReminder={() => {
-            setModalForceType("reminder");
-            setModalInitialData(null);
-            setIsModalOpen(true);
-          }}
-          tabCount={tabs.length}
+          onDeleteBoard={(id) => deleteItem(id, true)}
+          onSearch={setSearchQuery}
         />
+        <main
+          className={`flex-1 flex flex-col min-w-0 relative ${
+            settings.backgroundImage ? "bg-transparent" : "bg-bg"
+          }`}
+        >
+          <TopBar
+            onSearch={setSearchQuery}
+            hasBackground={!!settings.backgroundImage}
+            onViewValues={() =>
+              setSettings((s) => ({
+                ...s,
+                viewMode: s.viewMode === "feed" ? "tabs" : "feed",
+              }))
+            }
+            viewMode={settings.viewMode}
+            onCreate={(type) => {
+              setModalForceType(type);
+              setModalInitialData(null);
+              setIsModalOpen(true);
+            }}
+            onAddReminder={() => {
+              setModalForceType("reminder");
+              setModalInitialData(null);
+              setIsModalOpen(true);
+            }}
+            tabCount={tabs.length}
+          />
 
-        <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
-          <div className="max-w-[1700px] mx-auto">
-
-            
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr,340px] gap-10 items-start">
-              <div className="flex flex-col min-w-0">
-              {settings.activeSidebarItem !== "spaces" &&
-                settings.activeSidebarItem !== "reminders" &&
-                reminders.length > 0 && (
-                <div
-                  className={`mb-10 p-4 bg-gradient-to-br from-bg-card to-accent-glow/10 border border-border-card rounded-2xl backdrop-blur-md shadow-sm transition-all duration-300 ${
-                    settings.collapsedSections.includes("reminders")
-                      ? "pb-4"
-                      : "pb-6"
-                  }`}
-                >
-                  <div
-                    className="text-xs font-bold uppercase tracking-widest text-accent flex items-center justify-between cursor-pointer select-none"
-                  >
-                    <div className="flex items-center gap-2" onClick={() => handleToggleSection("reminders")}>
-                      <ClockIcon size={16} /> Active Reminders{" "}
-                      <span className="text-[10px] opacity-50 bg-accent/10 px-1.5 py-0.5 rounded-full">
-                        {reminders.length}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <button 
-                        onClick={() => setSettings(s => ({ ...s, activeSidebarItem: 'reminders' }))}
-                        className="text-[10px] bg-accent/10 hover:bg-accent/20 px-2 py-1 rounded transition-colors"
-                      >
-                        View All
-                      </button>
-                      <div
-                        onClick={() => handleToggleSection("reminders")}
-                        className={`transition-transform duration-300 ${
-                          settings.collapsedSections.includes("reminders")
-                            ? "-rotate-90"
-                            : ""
-                        }`}
-                      >
-                        <ChevronDown size={14} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {!settings.collapsedSections.includes("reminders") && (
-                    <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 mt-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300 relative">
-                      {reminders.map((r: any) => (
-                          <Card
-                            key={r.id}
-                            item={r}
-                            now={now}
-                            onClick={() => {
-                              if (r.url && r.url !== "about:blank") {
-                                window.location.href = r.url;
-                              } else {
-                                setModalInitialData(r);
-                                setModalForceType("reminder");
-                                setIsModalOpen(true);
-                              }
-                            }}
-                            onEdit={() => {
-                              setModalInitialData(r);
-                              setModalForceType("reminder");
-                              setIsModalOpen(true);
-                            }}
-                            onDelete={() => deleteItem(r.id)}
-                          />
-                        ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="w-full">
-            {settings.activeSidebarItem === "spaces" ? (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-black text-text-primary tracking-tight">
-                    Your Spaces
-                  </h2>
-                  <div className="h-px flex-1 bg-border-card mx-6"></div>
-                </div>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 px-2">
-                  <div
-                    onClick={() =>
-                      setSettings((s) => ({
-                        ...s,
-                        activeSidebarItem: "notes",
-                      }))
-                    }
-                    className="h-[160px] p-6 rounded-2xl border border-border-card bg-bg-card hover:bg-gradient-to-br hover:from-bg-card hover:to-accent-glow/20 flex flex-col justify-between cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-accent/5 hover:-translate-y-1 relative overflow-hidden"
-                  >
-                    <div className="absolute -right-4 -top-4 text-accent/5 group-hover:text-accent/10 transition-colors">
-                      <FileText size={120} />
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <FileText size={20} />
-                    </div>
-                    <div>
-                      <span className="text-xl font-black text-text-primary group-hover:text-accent transition-colors tracking-tight">
-                        Notes
-                      </span>
-                      <div className="text-xs text-text-secondary mt-1 font-medium">
-                        View and manage your notes
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    onClick={() =>
-                      setSettings((s) => ({
-                        ...s,
-                        activeSidebarItem: "reminders",
-                      }))
-                    }
-                    className="h-[160px] p-6 rounded-2xl border border-border-card bg-bg-card hover:bg-gradient-to-br hover:from-bg-card hover:to-accent-glow/20 flex flex-col justify-between cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-accent/5 hover:-translate-y-1 relative overflow-hidden"
-                  >
-                    <div className="absolute -right-4 -top-4 text-accent/5 group-hover:text-accent/10 transition-colors">
-                      <Bell size={120} />
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Bell size={20} />
-                    </div>
-                    <div>
-                      <span className="text-xl font-black text-text-primary group-hover:text-accent transition-colors tracking-tight">
-                        Reminders
-                      </span>
-                      <div className="text-xs text-text-secondary mt-1 font-medium">
-                        Stay on top of your tasks
-                      </div>
-                    </div>
-                  </div>
-
-                  {settings.boards.map((board) => (
-                    <div
-                      key={board.id}
-                      onClick={() =>
-                        setSettings((s) => ({
-                          ...s,
-                          activeBoardId: board.id,
-                          activeSidebarItem: "bookmarks",
-                        }))
-                      }
-                      className="h-[160px] p-6 rounded-2xl border border-border-card bg-bg-card hover:bg-gradient-to-br hover:from-bg-card hover:to-accent-glow/20 flex flex-col justify-between cursor-pointer group transition-all duration-300 hover:shadow-2xl hover:shadow-accent/5 hover:-translate-y-1 relative overflow-hidden"
-                    >
-                      <div className="absolute -right-4 -top-4 text-accent/5 group-hover:text-accent/10 transition-colors">
-                        <LayoutGrid size={120} />
-                      </div>
-                      <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <LayoutGrid size={20} />
-                      </div>
-                      <div>
-                        <span className="text-xl font-black text-text-primary group-hover:text-accent transition-colors tracking-tight">
-                          {board.name}
-                        </span>
-                        <div className="text-xs text-text-secondary mt-1 font-medium">
-                          Custom Board Space
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : settings.activeSidebarItem === "notes" ? (
-              <div className="animate-in fade-in duration-500">
-                <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-black text-text-primary tracking-tight">
-                    My Notes
-                  </h2>
-                  <button
-                    onClick={() => {
-                      setModalForceType("note");
-                      setModalInitialData(null);
-                      setIsModalOpen(true);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-white text-sm font-bold hover:shadow-lg hover:shadow-accent/20 transition-all"
-                  >
-                    <Plus size={16} /> New Note
-                  </button>
-                </div>
-                {notes.filter(n => n.title.toLowerCase().includes(searchQuery.toLowerCase()) || (n.description || "").toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
-                    {notes
-                      .filter(n => n.title.toLowerCase().includes(searchQuery.toLowerCase()) || (n.description || "").toLowerCase().includes(searchQuery.toLowerCase()))
-                      .map((note: any) => (
-                      <Card
-                        key={note.id}
-                        item={note}
+          <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
+            <div className="max-w-[1700px] mx-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr,340px] gap-10 items-start">
+                <div className="flex flex-col min-w-0">
+                  <div className="w-full">
+                    {settings.activeSidebarItem === "dashboard" ? (
+                      <DashboardView
+                        settings={settings}
+                        onToggleClockMode={handleToggleClockMode}
+                        reminders={reminders}
                         now={now}
-                        onClick={() => {
-                          setModalInitialData(note);
-                          setModalForceType("note");
+                        topSites={topSites}
+                        onCreateReminder={() => {
+                          setModalForceType("reminder");
+                          setModalInitialData(null);
                           setIsModalOpen(true);
                         }}
-                        onEdit={() => {
-                          setModalInitialData(note);
-                          setModalForceType("note");
-                          setIsModalOpen(true);
-                        }}
-                        onDelete={() => deleteItem(note.id)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-20 text-center border-2 border-dashed border-border-card rounded-3xl opacity-30">
-                    You haven't created any notes yet.
-                  </div>
-                )}
-              </div>
-            ) : settings.activeSidebarItem === "reminders" ? (
-              <div className="animate-in fade-in duration-500">
-                <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-black text-text-primary tracking-tight">
-                    All Reminders
-                  </h2>
-                  <button
-                    onClick={() => {
-                      setModalForceType("reminder");
-                      setModalInitialData(null);
-                      setIsModalOpen(true);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-white text-sm font-bold hover:shadow-lg hover:shadow-accent/20 transition-all"
-                  >
-                    <Plus size={16} /> New Reminder
-                  </button>
-                </div>
-                {reminders.filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()) || (r.description || "").toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
-                    {reminders
-                      .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()) || (r.description || "").toLowerCase().includes(searchQuery.toLowerCase()))
-                      .map((reminder: any) => (
-                      <Card
-                        key={reminder.id}
-                        item={reminder}
-                        now={now}
-                        onClick={() => {
-                          setModalInitialData(reminder);
+                        onEditReminder={(r) => {
+                          setModalInitialData(r);
                           setModalForceType("reminder");
                           setIsModalOpen(true);
                         }}
-                        onEdit={() => {
-                          setModalInitialData(reminder);
+                        onDeleteReminder={(id) => deleteItem(id)}
+                      />
+                    ) : settings.activeSidebarItem === "spaces" ? (
+                      <SpacesView
+                        settings={settings}
+                        setSettings={setSettings}
+                      />
+                    ) : settings.activeSidebarItem === "notes" ? (
+                      <NotesView
+                        notes={notes}
+                        searchQuery={searchQuery}
+                        now={now}
+                        onCreate={() => {
+                          setModalForceType("note");
+                          setModalInitialData(null);
+                          setIsModalOpen(true);
+                        }}
+                        onEdit={(n) => {
+                          setModalInitialData({ ...n, type: "note" });
+                          setModalForceType("note");
+                          setIsModalOpen(true);
+                        }}
+                        onDelete={(id) => deleteItem(id)}
+                      />
+                    ) : settings.activeSidebarItem === "reminders" ? (
+                      <RemindersView
+                        reminders={reminders}
+                        searchQuery={searchQuery}
+                        now={now}
+                        onCreate={() => {
+                          setModalForceType("reminder");
+                          setModalInitialData(null);
+                          setIsModalOpen(true);
+                        }}
+                        onEdit={(r) => {
+                          setModalInitialData({ ...r, type: "reminder" });
                           setModalForceType("reminder");
                           setIsModalOpen(true);
                         }}
-                        onDelete={() => deleteItem(reminder.id)}
+                        onDelete={(id) => deleteItem(id)}
                       />
-                    ))}
+                    ) : settings.activeSidebarItem === "background" ? (
+                      <BackgroundSettings
+                        settings={settings}
+                        setSettings={setSettings}
+                      />
+                    ) : (
+                      <BookmarksView
+                        settings={settings}
+                        tabs={tabs}
+                        flatFolders={flatFolders}
+                        looseBookmarks={looseBookmarks}
+                        searchQuery={searchQuery}
+                        now={now}
+                        draggingId={draggingId}
+                        onToggleSection={handleToggleSection}
+                        onDrop={handleDrop}
+                        onDragStart={handleDragStart}
+                        onItemClick={handleCardClick}
+                        onItemEdit={(item: any) => {
+                          setModalInitialData({
+                            ...item,
+                            type: "bookmark",
+                          });
+                          setModalForceType("bookmark");
+                          setIsModalOpen(true);
+                        }}
+                        onItemDelete={(item: any) => deleteItem(item.id)}
+                        onTabClose={(item) => chromeApi.closeTab(item.id)}
+                        onCreateBookmark={() => {
+                          setModalForceType("bookmark");
+                          setModalInitialData(null);
+                          setIsModalOpen(true);
+                        }}
+                      />
+                    )}
                   </div>
-                ) : (
-                  <div className="py-20 text-center border-2 border-dashed border-border-card rounded-3xl opacity-30">
-                    No reminders active at the moment.
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="w-full">
-                  {settings.viewMode === "tabs" ? (
-                    <div className="animate-in fade-in duration-300">
-                      <div className="flex flex-wrap gap-2 px-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
-                        {[
-                          { id: "tabs", title: "Running Tabs", count: tabs.length },
-                          ...flatFolders.map((f: any) => ({
-                            id: f.id,
-                            title: f.title,
-                            count: f.children?.length || 0,
-                          })),
-                        ].map((chip) => {
-                          const isActive = settings.activeTab === chip.id;
-                          const isCollapsed = settings.collapsedSections.includes(chip.id);
-                          
-                          return (
-                            <button
-                              key={chip.id}
-                              onClick={() => {
-                                if (isActive) {
-                                  handleToggleSection(chip.id);
-                                } else {
-                                  setSettings((s) => ({ ...s, activeTab: chip.id }));
-                                }
-                              }}
-                              className={`px-3 py-1.5 rounded-lg border text-[12px] font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
-                                isActive
-                                  ? "bg-accent text-white border-accent shadow-md shadow-accent/10"
-                                  : "bg-bg-card border-border-card text-text-secondary hover:text-text-primary hover:bg-border-card"
-                              } ${isActive && isCollapsed ? "opacity-60 grayscale-[0.5]" : ""}`}
-                            >
-                              {chip.title}
-                              {isActive && isCollapsed && <ChevronDown size={12} className="-rotate-90" />}
-                              <span
-                                className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-                                  isActive
-                                    ? "bg-white/20 text-white"
-                                    : "bg-bg text-text-secondary"
-                                }`}
-                              >
-                                {chip.count}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                </div>
 
-                      <div
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) =>
-                          settings.activeTab !== "tabs" &&
-                          handleDrop(e, settings.activeTab)
-                        }
-                      >
-                        {!settings.collapsedSections.includes(settings.activeTab) ? (
-                          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 animate-in fade-in zoom-in-95 duration-200">
-                            {(settings.activeTab === "tabs"
-                               ? tabs
-                               : flatFolders.find(
-                                   (f: any) =>
-                                     String(f.id) === String(settings.activeTab)
-                                 )?.children || []
-                             )
-                             .filter((i: any) => i.title.toLowerCase().includes(searchQuery.toLowerCase()) || (i.url || "").toLowerCase().includes(searchQuery.toLowerCase()))
-                             .map((item: any) => (
-                              <Card
-                                key={item.id}
-                                item={{ ...item, ...metadata[item.id] }}
-                                now={now}
-                                isTab={settings.activeTab === "tabs"}
-                                onClick={() => {
-                                  if (settings.activeTab === "tabs") {
-                                    chromeApi.activateTab(item.id);
-                                  } else if (item.children) {
-                                    setSettings((s) => ({
-                                      ...s,
-                                      activeTab: String(item.id),
-                                    }));
-                                  } else if (item.url) {
-                                    window.location.href = item.url;
-                                  }
-                                }}
-                                onEdit={() => {
-                                  setModalInitialData({
-                                    ...item,
-                                    ...metadata[item.id],
-                                    type:
-                                      item.children || item.type === "folder"
-                                        ? "folder"
-                                        : metadata[item.id]?.type || "bookmark",
-                                  });
-                                  setModalForceType(null);
-                                  setIsModalOpen(true);
-                                }}
-                                onDelete={() =>
-                                  settings.activeTab === "tabs"
-                                    ? chromeApi.closeTab(item.id)
-                                    : deleteItem(item.id)
-                                }
-                                onClose={() => chromeApi.closeTab(item.id)}
-                                onDragStart={(e) =>
-                                  handleDragStart(e, String(item.id))
-                                }
-                              />
-                            ))}
-                            {(settings.activeTab === "tabs"
-                              ? tabs
-                              : flatFolders.find(
-                                  (f: any) =>
-                                    String(f.id) === String(settings.activeTab)
-                                )?.children || []
-                            ).length === 0 && (
-                              <div className="col-span-full py-20 text-center text-text-secondary border-2 border-dashed border-border-card rounded-3xl opacity-40">
-                                No items found in this section
-                              </div>
-                            )}
+                {settings.activeSidebarItem !== "dashboard" ? (
+                  <aside className="flex flex-col gap-6 sticky top-4 h-fit max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar pb-10">
+                    {topSites.length > 0 && (
+                      <div className="w-full">
+                        <div
+                          className="flex items-center gap-2 mb-4 cursor-pointer select-none group/title"
+                          onClick={() => handleToggleSection("topsites")}
+                        >
+                          <div
+                            className={`p-1 rounded-md text-text-secondary group-hover/title:bg-border-card transition-all ${
+                              settings.collapsedSections.includes("topsites")
+                                ? "-rotate-90"
+                                : ""
+                            }`}
+                          >
+                            <ChevronDown size={14} />
                           </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="animate-in fade-in duration-300">
-                      {renderSection("Running Tabs", tabs, "tabs", true)}
-                      {flatFolders.map((folder: any) =>
-                        renderSection(folder.title, folder.children, folder.id)
-                      )}
-                      {flatFolders.length === 0 &&
-                        looseBookmarks.length === 0 &&
-                        tabs.length === 0 && (
-                          <div className="py-20 text-center border-2 border-dashed border-border-card rounded-3xl opacity-30">
-                            This space is looking a bit empty. Create some
-                            bookmarks or folders!
+                          <h3 className="text-[14px] font-bold text-text-primary/90 flex items-center gap-2 uppercase tracking-wide">
+                            Most Visited
+                            <span className="text-text-secondary text-[10px] font-bold opacity-30 ml-1 bg-border-card px-1.5 py-0.5 rounded-full">
+                              {topSites.length}
+                            </span>
+                          </h3>
+                        </div>
+
+                        {!settings.collapsedSections.includes("topsites") && (
+                          <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            {topSites.map((site: any, idx: number) => (
+                              <div
+                                key={idx}
+                                onClick={() =>
+                                  site.url && (window.location.href = site.url)
+                                }
+                                className="p-3 rounded-xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-center cursor-pointer group"
+                              >
+                                <img
+                                  src={`https://www.google.com/s2/favicons?domain=${
+                                    site.url || ""
+                                  }&sz=64`}
+                                  className="w-8 h-8 mx-auto mb-2 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all"
+                                  alt=""
+                                />
+                                <div className="text-[11px] font-bold text-text-primary truncate">
+                                  {site.title}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {(looseBookmarks.length > 0 ||
+                      (settings.activeSidebarItem !== "dashboard" &&
+                        settings.activeSidebarItem !== "spaces")) && (
+                      <SectionList
+                        title="Quick Links"
+                        items={looseBookmarks}
+                        id="loose"
+                        settings={settings}
+                        searchQuery={searchQuery}
+                        now={now}
+                        draggingId={draggingId}
+                        onToggleSection={handleToggleSection}
+                        onDrop={handleDrop}
+                        onDragStart={handleDragStart}
+                        onItemClick={handleCardClick}
+                        onItemEdit={(item: any) => {
+                          setModalInitialData(item);
+                          setModalForceType("bookmark");
+                          setIsModalOpen(true);
+                        }}
+                        onItemDelete={(item: any) => deleteItem(item.id)}
+                      />
+                    )}
+                  </aside>
+                ) : (
+                  <div className="flex flex-col gap-6">
+                    <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm">
+                      <ClockWidget
+                        now={now}
+                        mode={settings.clockMode}
+                        onToggle={handleToggleClockMode}
+                      />
                     </div>
-                  )}
-                </div>
-              )}
+                    <div className="glass border border-border-card rounded-3xl overflow-hidden backdrop-blur-md shadow-sm">
+                      <Calendar />
+                    </div>
+
+                    {/* Most Visited Sites */}
+                    {topSites.length > 0 && (
+                      <div className="glass border border-border-card rounded-3xl p-5 backdrop-blur-md shadow-sm">
+                        <h3 className="text-sm font-black text-text-primary uppercase tracking-tight mb-4 flex items-center gap-2">
+                          <ExternalLink size={14} className="text-accent" />
+                          Most Visited
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          {topSites
+                            .slice(0, 6)
+                            .map((site: any, idx: number) => (
+                              <a
+                                key={idx}
+                                href={site.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="glass flex flex-col items-center gap-2 p-3 rounded-xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all cursor-pointer group"
+                              >
+                                <img
+                                  src={`https://www.google.com/s2/favicons?domain=${
+                                    site.url || ""
+                                  }&sz=64`}
+                                  className="w-8 h-8 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all"
+                                  alt=""
+                                />
+                                <div className="text-[10px] font-bold text-text-primary text-center truncate w-full">
+                                  {site.title}
+                                </div>
+                              </a>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-
-          <aside className="flex flex-col gap-6 sticky top-4 h-fit max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar pb-10">
-            <div className="bg-bg-card/20 rounded-3xl flex flex-col gap-4 shadow-sm backdrop-blur-sm">
-            <div className="border border-border-card rounded-xl p-6 bg-gradient-to-br from-bg-card to-accent-glow/5 h-[250px] overflow-y-auto">
-              <ClockWidget 
-                now={now} 
-                mode={settings.clockMode} 
-                onToggle={() => setSettings(s => ({ ...s, clockMode: s.clockMode === 'digital' ? 'analog' : 'digital' }))}
-              />
-            </div>
-              <Calendar />
-            </div>
-
-            {topSites.length > 0 && (
-                    <div className="w-full">
-                      <div
-                        className="flex items-center gap-2 mb-4 cursor-pointer select-none group/title"
-                        onClick={() => handleToggleSection("topsites")}
-                      >
-                        <div
-                          className={`p-1 rounded-md text-text-secondary group-hover/title:bg-border-card transition-all ${
-                            settings.collapsedSections.includes("topsites")
-                              ? "-rotate-90"
-                              : ""
-                          }`}
-                        >
-                          <ChevronDown size={14} />
-                        </div>
-                        <h3 className="text-[14px] font-bold text-text-primary/90 flex items-center gap-2 uppercase tracking-wide">
-                          Most Visited
-                          <span className="text-text-secondary text-[10px] font-bold opacity-30 ml-1 bg-border-card px-1.5 py-0.5 rounded-full">
-                            {topSites.length}
-                          </span>
-                        </h3>
-                      </div>
-
-                      {!settings.collapsedSections.includes("topsites") && (
-                        <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                          {topSites.map((site: any, idx: number) => (
-                            <div
-                              key={idx}
-                              onClick={() =>
-                                site.url && (window.location.href = site.url)
-                              }
-                              className="p-3 rounded-xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-center cursor-pointer group"
-                            >
-                              <img
-                                src={`https://www.google.com/s2/favicons?domain=${
-                                  site.url || ""
-                                }&sz=64`}
-                                className="w-8 h-8 mx-auto mb-2 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all"
-                                alt=""
-                              />
-                              <div className="text-[11px] font-bold text-text-primary truncate">
-                                {site.title}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-            {renderSection("Quick Links", looseBookmarks, "loose")}
-          </aside>
-        </div>
+        </main>
       </div>
-    </div>
-  </main>
 
       <EditModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveEdit}
-        initialData={modalInitialData}
         forceType={modalForceType}
       />
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder, FileText, Bell, Trash2, Edit2 } from 'lucide-react';
+import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder, FileText, Bell, Trash2, Edit2, LayoutDashboard, ImagePlus } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -16,10 +16,13 @@ interface SidebarProps {
   onSelectNotes: () => void;
   onSelectReminders: () => void;
   onSelectSpace: () => void;
+  onSelectDashboard: () => void;
+  onSelectBackground: () => void;
   onCreateBoard: () => void;
   onEditBoard?: (id: string, name: string) => void;
   onDeleteBoard?: (id: string) => void;
   onSearch?: (query: string) => void;
+  hasBackground?: boolean;
 }
 
 import { Search } from 'lucide-react';
@@ -39,17 +42,21 @@ export function Sidebar({
   onSelectNotes,
   onSelectReminders,
   onSelectSpace,
+  onSelectDashboard,
+  onSelectBackground,
   onCreateBoard,
   onEditBoard,
   onDeleteBoard,
   onSearch,
+  hasBackground,
 }: SidebarProps) {
   return (
     <aside
       className={`
-        bg-bg-sidebar border-r border-border-card flex flex-col flex-shrink-0 
-        transition-all duration-300 ease-in-out h-full
+        border-r flex flex-col flex-shrink-0 
+        transition-all duration-300 ease-in-out h-full z-[60]
         ${collapsed ? 'w-[72px] p-2' : 'w-[260px] p-6'}
+        ${hasBackground ? 'bg-white/70 dark:bg-black/10 backdrop-blur-md border-white/20 dark:border-white/10' : 'bg-bg-sidebar border-border-card'}
       `}
     >
       <div className={`flex items-center justify-between mb-8 ${collapsed ? 'flex-col gap-4 justify-center mb-6' : ''}`}>
@@ -91,7 +98,24 @@ export function Sidebar({
 
       <nav className="flex flex-col gap-1 flex-1 min-h-0">
         <div className="flex flex-col gap-1 overflow-y-auto flex-1 no-scrollbar pb-4">
-          <div className={`text-[10px] uppercase font-bold text-text-secondary/60 mb-2 px-3 tracking-widest ${!collapsed ? '' : 'hidden'}`}>Library</div>
+          <button
+            onClick={onSelectDashboard}
+            className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-all w-full
+              ${collapsed ? 'justify-center p-2.5' : ''}
+              ${
+                activeSidebarItem === 'dashboard'
+                  ? 'bg-border-card text-gray-200 shadow-sm'
+                  : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
+              }
+            `}
+            title="Dashboard"
+          >
+            <LayoutDashboard size={18} className="flex-shrink-0" />
+            {!collapsed && <span className="text-gray-200 hover:text-gray-100 transition-colors">Dashboard</span>}
+          </button>
+          
+          {/* <div className={`text-[10px] uppercase font-bold text-text-secondary/60 mb-2 px-3 mt-4 tracking-widest ${!collapsed ? '' : 'hidden'}`}>Library</div> */}
           {boards.map((board) => (
             <div key={board.id} className="group relative flex items-center gap-0.5">
               <button
@@ -101,8 +125,8 @@ export function Sidebar({
                     ${collapsed ? 'justify-center p-2.5' : ''}
                     ${
                     activeSidebarItem === 'bookmarks' && activeBoardId === board.id && (activeTabId === 'tabs' || !activeTabId)
-                        ? 'bg-border-card text-text-primary shadow-sm'
-                        : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                        ? 'bg-border-card text-gray-200 shadow-sm'
+                        : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
                     }
                 `}
                 title={board.name}
@@ -110,33 +134,6 @@ export function Sidebar({
                 <Folder size={18} className="flex-shrink-0" />
                 {!collapsed && <span className="truncate flex-1 text-left">{board.name}</span>}
               </button>
-              
-              {!collapsed && onEditBoard && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const newName = prompt("Rename Board:", board.name);
-                    if (newName) onEditBoard(board.id, newName);
-                  }}
-                  className="absolute right-9 p-1.5 rounded-md text-text-secondary opacity-0 group-hover:opacity-100 hover:bg-border-card hover:text-text-primary transition-all"
-                  title="Rename Board"
-                >
-                  <Edit2 size={14} />
-                </button>
-              )}
-
-              {!collapsed && onDeleteBoard && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteBoard(board.id);
-                  }}
-                  className="absolute right-2 p-1.5 rounded-md text-text-secondary opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500 transition-all"
-                  title="Delete Board"
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
             </div>
           ))}
 
@@ -147,8 +144,8 @@ export function Sidebar({
               ${collapsed ? 'justify-center p-2.5' : ''}
               ${
                 activeSidebarItem === 'notes'
-                  ? 'bg-border-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                  ? 'bg-border-card text-gray-200 shadow-sm'
+                  : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
               }
             `}
             title="Notes"
@@ -164,8 +161,8 @@ export function Sidebar({
               ${collapsed ? 'justify-center p-2.5' : ''}
               ${
                 activeSidebarItem === 'reminders'
-                  ? 'bg-border-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                  ? 'bg-border-card text-gray-200 shadow-sm'
+                  : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
               }
             `}
             title="Reminders"
@@ -181,7 +178,7 @@ export function Sidebar({
           onClick={onCreateBoard}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
-            text-text-secondary hover:bg-border-card hover:text-text-primary
+            text-gray-200 hover:bg-border-card hover:text-gray-100
             ${collapsed ? 'justify-center p-2.5' : ''}
           `}
           title="Create Board"
@@ -197,8 +194,8 @@ export function Sidebar({
             ${collapsed ? 'justify-center p-2.5' : ''}
             ${
               activeSidebarItem === 'spaces'
-                ? 'bg-border-card text-text-primary shadow-sm'
-                : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                ? 'bg-border-card text-gray-200 shadow-sm'
+                : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
             }
           `}
           title="Spaces"
@@ -208,12 +205,28 @@ export function Sidebar({
         </button>
       </nav>
 
-      <div className="mt-auto pt-4 border-t border-border-card">
+      <div className="mt-auto pt-4 border-t border-border-card space-y-1">
+        <button
+          onClick={onSelectBackground}
+          className={`
+            flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
+            ${collapsed ? 'justify-center p-2.5' : ''}
+            ${
+              activeSidebarItem === 'background'
+                ? 'bg-border-card text-gray-200 shadow-sm'
+                : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
+            }
+          `}
+          title="Background Settings"
+        >
+          <ImagePlus size={20} />
+          {!collapsed && <span>Background</span>}
+        </button>
         <button
           onClick={onToggleTheme}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
-            text-text-secondary hover:bg-border-card hover:text-text-primary
+            text-gray-200 hover:bg-border-card hover:text-gray-100
             ${collapsed ? 'justify-center p-2.5' : ''}
           `}
           title="Toggle Theme"
