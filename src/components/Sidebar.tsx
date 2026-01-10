@@ -19,7 +19,10 @@ interface SidebarProps {
   onCreateBoard: () => void;
   onEditBoard?: (id: string, name: string) => void;
   onDeleteBoard?: (id: string) => void;
+  onSearch?: (query: string) => void;
 }
+
+import { Search } from 'lucide-react';
 
 export function Sidebar({
   collapsed,
@@ -39,6 +42,7 @@ export function Sidebar({
   onCreateBoard,
   onEditBoard,
   onDeleteBoard,
+  onSearch,
 }: SidebarProps) {
   return (
     <aside
@@ -48,25 +52,42 @@ export function Sidebar({
         ${collapsed ? 'w-[72px] p-2' : 'w-[260px] p-6'}
       `}
     >
-      <div className={`flex items-center justify-between mb-8 ${collapsed ? 'flex-col gap-4 justify-center mb-4' : ''}`}>
+      <div className={`flex items-center justify-between mb-8 ${collapsed ? 'flex-col gap-4 justify-center mb-6' : ''}`}>
         <div className={`flex items-center gap-3 overflow-hidden ${collapsed ? 'w-full justify-center gap-0' : ''}`}>
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-400 flex items-center justify-center flex-shrink-0 text-white">
-            <LayoutGrid size={18} strokeWidth={2.5} />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 via-red-500 to-yellow-500 flex items-center justify-center flex-shrink-0 text-white shadow-lg shadow-accent/10">
+            <LayoutGrid size={20} strokeWidth={2.5} />
           </div>
           {!collapsed && (
-            <h1 className="text-xl font-bold whitespace-nowrap tracking-tight transition-opacity duration-200">
+            <h1 className="text-xl font-black whitespace-nowrap tracking-tight transition-opacity duration-200 bg-gradient-to-r from-text-primary to-text-secondary bg-clip-text text-transparent">
               TabStack
             </h1>
           )}
         </div>
         <button
           onClick={onToggleSidebar}
-          className="p-1 rounded text-text-secondary hover:bg-border-card hover:text-text-primary transition-colors"
+          className={`p-1.5 rounded-lg text-text-secondary hover:bg-border-card hover:text-text-primary transition-all ${collapsed ? 'mx-auto mt-2' : ''}`}
           title="Toggle Sidebar"
         >
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
       </div>
+
+      {!collapsed && onSearch && (
+        <div className="mb-6 px-1 animate-in fade-in slide-in-from-left-2 duration-300">
+          <div className="relative group">
+            <Search 
+              size={16} 
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors" 
+            />
+            <input
+              type="text"
+              placeholder="Search library..."
+              onChange={(e) => onSearch(e.target.value)}
+              className="w-full bg-bg border border-border-card rounded-xl py-2 pl-10 pr-4 text-xs font-medium text-text-primary outline-none focus:border-accent/40 focus:ring-4 focus:ring-accent/5 transition-all"
+            />
+          </div>
+        </div>
+      )}
 
       <nav className="flex flex-col gap-1 flex-1 min-h-0">
         <div className="flex flex-col gap-1 overflow-y-auto flex-1 no-scrollbar pb-4">

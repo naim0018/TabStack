@@ -6,6 +6,7 @@ import { EditModal, EditData } from "./components/EditModal";
 import { ConfirmationModal } from "./components/ConfirmationModal";
 import { chromeApi } from "./utils/chrome";
 import { Clock as ClockWidget, Calendar } from "./components/Widgets";
+import { GoogleSearch } from "./components/GoogleSearch";
 import {
   ChevronDown,
   Clock as ClockIcon,
@@ -44,6 +45,37 @@ const DEFAULT_SETTINGS: Settings = {
   collapsedSections: [],
   clockMode: "digital",
 };
+
+// --- Sync Helpers ---
+const encodeMetaToUrl = (url: string, meta: any) => {
+  try {
+    const cleanUrl = url || "about:blank";
+    const [base, hash] = cleanUrl.split("#");
+    const hashParams = new URLSearchParams(hash || "");
+    const metaStr = JSON.stringify(meta);
+    const encoded = btoa(encodeURIComponent(metaStr));
+    hashParams.set("tsmeta", encoded);
+    return `${base}#${hashParams.toString()}`;
+  } catch (e) {
+    return url;
+  }
+};
+
+const decodeMetaFromUrl = (url: string) => {
+  try {
+    if (!url || !url.includes("#")) return {};
+    const hash = url.split("#")[1];
+    if (!hash) return {};
+    const params = new URLSearchParams(hash);
+    const encoded = params.get("tsmeta");
+    if (!encoded) return {};
+    const decoded = decodeURIComponent(atob(encoded));
+    return JSON.parse(decoded);
+  } catch (e) {
+    return {};
+  }
+};
+// --------------------
 
 const App = () => {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -357,9 +389,12 @@ const App = () => {
           node.children.forEach((child: any) => {
             if (child.id === notesFolderId || child.id === remindersFolderId || child.id === tabStackFolderId) return; // Skip
 
+            const urlMeta = decodeMetaFromUrl(child.url);
+            const enriched = { ...child, ...urlMeta, ...metadata[child.id] };
+
             if (!child.children) {
-              all.push(child);
-              if (isRoot) loose.push(child);
+              all.push(enriched);
+              if (isRoot) loose.push(enriched);
             } else {
               collect(child, false);
             }
@@ -389,11 +424,15 @@ const App = () => {
     const folder = findFolderNode(tree);
     if (!folder || !folder.children) return [];
 
-    return folder.children.map((n: any) => ({
-      ...n,
-      ...metadata[n.id],
-      type: "reminder",
-    }))
+    return folder.children.map((n: any) => {
+      const urlMeta = decodeMetaFromUrl(n.url);
+      return {
+        ...n,
+        ...urlMeta,
+        ...metadata[n.id],
+        type: "reminder",
+      };
+    })
     .sort((a: any, b: any) => {
       const da = a.deadline ? new Date(a.deadline).getTime() : 0;
       const db = b.deadline ? new Date(b.deadline).getTime() : 0;
@@ -418,11 +457,15 @@ const App = () => {
     const folder = findFolder(tree);
     if (!folder || !folder.children) return [];
 
-    return folder.children.map((n: any) => ({
-      ...n,
-      ...metadata[n.id],
-      type: "note",
-    }));
+    return folder.children.map((n: any) => {
+      const urlMeta = decodeMetaFromUrl(n.url);
+      return {
+        ...n,
+        ...urlMeta,
+        ...metadata[n.id],
+        type: "note",
+      };
+    });
   }, [tree, notesFolderId, metadata]);
 
   // Handlers
@@ -477,15 +520,20 @@ const App = () => {
             parentId === "tabs" || parentId === "Space" ? "1" : parentId,
           title,
         };
-        if (type !== "folder" && type !== "note")
-          createParams.url = url || (type === "reminder" ? "about:blank" : "");
-        if (type === "note") createParams.url = "about:blank"; // Notes use about:blank as placeholder
+        
+        // Encode metadata into URL for robust sync
+        const baseUrl = url || (type === "reminder" || type === "note" ? "about:blank" : "");
+        if (type !== "folder") {
+          createParams.url = encodeMetaToUrl(baseUrl, metaToSave);
+        }
 
         const created = await chromeApi.createBookmark(createParams);
         savedId = created.id;
       } else {
         const updateParams: any = { title };
-        if (type !== "folder" && type !== "note") updateParams.url = url;
+        if (type !== "folder") {
+          updateParams.url = encodeMetaToUrl(url || "", metaToSave);
+        }
         await chromeApi.updateBookmark(id, updateParams);
       }
 
@@ -606,7 +654,7 @@ const App = () => {
             {filteredItems.map((item: any) => (
               <Card
                 key={item.id || item.title}
-                item={{ ...item, ...metadata[item.id] }}
+                item={item}
                 now={now}
                 isTab={isTabSection}
                 onClick={() => {
@@ -703,6 +751,7 @@ const App = () => {
           refreshData();
         }}
         onDeleteBoard={(id) => deleteItem(id, true)}
+        onSearch={setSearchQuery}
       />
       <main className="flex-1 flex flex-col min-w-0 bg-bg relative">
         <TopBar
@@ -728,8 +777,11 @@ const App = () => {
         />
 
         <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr,340px] gap-10 items-start max-w-[1700px] mx-auto">
-            <div className="flex flex-col min-w-0">
+          <div className="max-w-[1700px] mx-auto">
+            <GoogleSearch />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr,340px] gap-10 items-start">
+              <div className="flex flex-col min-w-0">
               {settings.activeSidebarItem !== "spaces" &&
                 settings.activeSidebarItem !== "reminders" &&
                 reminders.length > 0 && (
@@ -770,7 +822,7 @@ const App = () => {
                   </div>
 
                   {!settings.collapsedSections.includes("reminders") && (
-                    <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 mt-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300 max-h-[160px] overflow-hidden relative">
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 mt-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300 relative">
                       {reminders.map((r: any) => (
                           <Card
                             key={r.id}
@@ -905,9 +957,11 @@ const App = () => {
                     <Plus size={16} /> New Note
                   </button>
                 </div>
-                {notes.length > 0 ? (
+                {notes.filter(n => n.title.toLowerCase().includes(searchQuery.toLowerCase()) || (n.description || "").toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
-                    {notes.map((note: any) => (
+                    {notes
+                      .filter(n => n.title.toLowerCase().includes(searchQuery.toLowerCase()) || (n.description || "").toLowerCase().includes(searchQuery.toLowerCase()))
+                      .map((note: any) => (
                       <Card
                         key={note.id}
                         item={note}
@@ -949,9 +1003,11 @@ const App = () => {
                     <Plus size={16} /> New Reminder
                   </button>
                 </div>
-                {reminders.length > 0 ? (
+                {reminders.filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()) || (r.description || "").toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
-                    {reminders.map((reminder: any) => (
+                    {reminders
+                      .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()) || (r.description || "").toLowerCase().includes(searchQuery.toLowerCase()))
+                      .map((reminder: any) => (
                       <Card
                         key={reminder.id}
                         item={reminder}
@@ -1034,12 +1090,14 @@ const App = () => {
                         {!settings.collapsedSections.includes(settings.activeTab) ? (
                           <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 animate-in fade-in zoom-in-95 duration-200">
                             {(settings.activeTab === "tabs"
-                              ? tabs
-                              : flatFolders.find(
-                                  (f: any) =>
-                                    String(f.id) === String(settings.activeTab)
-                                )?.children || []
-                            ).map((item: any) => (
+                               ? tabs
+                               : flatFolders.find(
+                                   (f: any) =>
+                                     String(f.id) === String(settings.activeTab)
+                                 )?.children || []
+                             )
+                             .filter((i: any) => i.title.toLowerCase().includes(searchQuery.toLowerCase()) || (i.url || "").toLowerCase().includes(searchQuery.toLowerCase()))
+                             .map((item: any) => (
                               <Card
                                 key={item.id}
                                 item={{ ...item, ...metadata[item.id] }}
@@ -1181,7 +1239,8 @@ const App = () => {
           </aside>
         </div>
       </div>
-    </main>
+    </div>
+  </main>
 
       <EditModal
         isOpen={isModalOpen}

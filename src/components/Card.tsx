@@ -48,7 +48,7 @@ export function Card({
   const [copied, setCopied] = useState(false);
   const isFolder = item.children !== undefined || item.type === "folder";
   const isNote = item.type === "note";
-  const isReminder = item.type === "reminder";
+  const isReminder = item.type === "reminder" || !!item.deadline;
 
   // Favicon logic
   const getFavicon = () => {
@@ -190,26 +190,34 @@ export function Card({
           {isReminder && item.deadline && (
             <div
               className={`
-              px-3 py-2 rounded-xl flex flex-col gap-1.5 transition-colors`}
+              px-3 py-2.5 rounded-xl flex flex-col gap-2 bg-gradient-to-br transition-all duration-300 border
+              ${isPast || isUrgent 
+                ? "from-danger/10 to-danger/5 border-danger/20 shadow-sm shadow-danger/5" 
+                : "from-accent/10 to-accent/5 border-accent/20 shadow-sm shadow-accent/5"
+              }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-secondary">
-                  <Clock size={10} />
-                  <span>{isPast ? "Expired" : "Deadline"}</span>
+                  <Clock size={12} className={isPast || isUrgent ? "text-danger" : "text-accent"} />
+                  <span className={isPast || isUrgent ? "text-danger" : "text-accent"}>
+                    {isPast ? "Expired" : "Deadline"}
+                  </span>
                 </div>
-                <div
-                  className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border ${
-                    isPast || isUrgent
-                      ? "text-danger border-danger/30 bg-danger/10"
-                      : "text-accent border-accent/30 bg-accent/10"
-                  }`}
-                >
-                  {countdownText}
-                </div>
+                {countdownText && (
+                  <div
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border transition-all ${
+                      isPast || isUrgent
+                        ? "text-danger border-danger/30 bg-danger/10 animate-pulse"
+                        : "text-accent border-accent/30 bg-accent/10"
+                    }`}
+                  >
+                    {countdownText}
+                  </div>
+                )}
               </div>
               <div
-                className={`text-[14px] font-medium ${
-                  isPast || isUrgent ? "text-danger/80" : "text-text-secondary"
+                className={`text-[12px] font-bold flex items-center gap-2 ${
+                  isPast || isUrgent ? "text-danger/90" : "text-text-primary/80"
                 }`}
               >
                 {new Date(item.deadline).toLocaleString([], {
@@ -217,6 +225,7 @@ export function Card({
                   day: "numeric",
                   hour: "numeric",
                   minute: "2-digit",
+                  hour12: true
                 })}
               </div>
             </div>
