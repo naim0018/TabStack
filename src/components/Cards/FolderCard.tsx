@@ -62,7 +62,7 @@ export function FolderCard({
       onClick={onClick}
       onDragStart={onDragStart}
       draggable={item.id !== undefined}
-      className="w-[200px] h-[50px] glass group relative p-2 rounded-xl border transition-all duration-300 backdrop-blur-md overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:shadow-accent/5 bg-bg-card border-border-card hover:border-accent"
+      className="w-full h-auto glass group relative p-3.5 rounded-2xl border transition-all duration-300 backdrop-blur-md overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5 bg-bg-card border-border-card hover:border-accent"
     >
       <div className="flex items-start gap-3 w-full relative z-10">
         <div className="w-9 h-9 border border-border-card rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 bg-accent/10 text-accent">

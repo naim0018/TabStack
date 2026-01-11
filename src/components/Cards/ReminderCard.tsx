@@ -116,7 +116,7 @@ export function ReminderCard({
       onClick={handleCardClick}
       onDragStart={onDragStart}
       draggable={item.id !== undefined}
-      className={`w-[250px] h-[50px] glass group relative p-2 rounded-xl border transition-all duration-300 backdrop-blur-md overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:shadow-accent/5 min-h-[140px] ${
+      className={`w-full glass group relative p-4 rounded-2xl border transition-all duration-300 backdrop-blur-md overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5 min-h-[140px] ${
         isPast || isUrgent
           ? "bg-danger/5 border-danger/20 hover:border-danger/40"
           : "bg-bg-card border-border-card hover:border-accent"

@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
   "name": "TabStack",
-  "version": "1.0.0",
-  "description": "A easy way to manage your Bookmarks, Reminders, Notes",
+  "version": "1.1.0",
+  "description": "The ultimate tab and bookmark management companion.",
   "permissions": [
     "bookmarks",
     "storage",
     "tabs",
-    "favicon",
-    "topSites"
+    "topSites",
+    "favicon"
   ],
   "chrome_url_overrides": {
     "newtab": "index.html"
