@@ -42,7 +42,7 @@ export interface BookmarkItem {
   parentId?: string;
   dateAdded?: number;
   children?: BookmarkItem[];
-  type?: "bookmark" | "folder";
+  type?: "bookmark" | "folder" | "reminder" | "note" | "quicklink";
   description?: string;
   deadline?: string;
 }

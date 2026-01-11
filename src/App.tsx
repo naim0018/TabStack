@@ -78,6 +78,9 @@ const App = () => {
   const [remindersFolderId, setRemindersFolderId] = useState<string | null>(
     null
   );
+  const [quickLinksFolderId, setQuickLinksFolderId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -231,6 +234,18 @@ const App = () => {
         }
       }
       setRemindersFolderId(remFolderNode.id);
+
+      // 4. Find or Create QuickLinks outside TabStack
+      let qlFolderNode = findFolder(tr, "QuickLinks", "1");
+      if (!qlFolderNode) {
+        isMoving.current = true;
+        qlFolderNode = await chromeApi.createBookmark({
+          parentId: "1",
+          title: "QuickLinks",
+        });
+        isMoving.current = false;
+      }
+      setQuickLinksFolderId(qlFolderNode.id);
 
       // 4. Migrate legacy boards from Root to Parent
       const legacyBoards = rootNodes.filter(
@@ -507,6 +522,32 @@ const App = () => {
     });
   }, [tree, notesFolderId, metadata]);
 
+  const quickLinksData = useMemo(() => {
+    if (!quickLinksFolderId || !tree || tree.length === 0) return [];
+    const findFolder = (nodes: any[]): any => {
+      for (let n of nodes) {
+        if (n.id === quickLinksFolderId) return n;
+        if (n.children) {
+          const f = findFolder(n.children);
+          if (f) return f;
+        }
+      }
+      return null;
+    };
+    const folder = findFolder(tree);
+    if (!folder || !folder.children) return [];
+
+    return folder.children.map((n: any) => {
+      const urlMeta = decodeMetaFromUrl(n.url);
+      return {
+        ...n,
+        ...urlMeta,
+        ...metadata[n.id],
+        type: "bookmark",
+      };
+    });
+  }, [tree, quickLinksFolderId, metadata]);
+
   // Handlers
   const handleToggleSection = (id: string) => {
     setSettings((prev) => ({
@@ -565,6 +606,8 @@ const App = () => {
             ? notesFolderId || "1"
             : type === "reminder"
             ? remindersFolderId || "1"
+            : type === "quicklink"
+            ? quickLinksFolderId || "1"
             : settings.activeTab !== "tabs"
             ? settings.activeTab
             : settings.activeBoardId;
@@ -818,6 +861,7 @@ const App = () => {
                         settings={settings}
                         onToggleClockMode={handleToggleClockMode}
                         reminders={reminders}
+                        quickLinks={quickLinksData}
                         now={now}
                         topSites={topSites}
                         onCreateReminder={() => {
@@ -831,6 +875,25 @@ const App = () => {
                           setIsModalOpen(true);
                         }}
                         onDeleteReminder={(id) => deleteItem(id)}
+                        onAddQuickLink={() => {
+                          setModalForceType("bookmark");
+                          setModalInitialData({
+                            id: "",
+                            title: "",
+                            url: "",
+                            type: "quicklink" as any,
+                          });
+                          setIsModalOpen(true);
+                        }}
+                        onEditQuickLink={(link) => {
+                          setModalInitialData({
+                            ...link,
+                            type: "quicklink" as any,
+                          });
+                          setModalForceType("bookmark");
+                          setIsModalOpen(true);
+                        }}
+                        onDeleteQuickLink={(id) => deleteItem(id)}
                       />
                     ) : settings.activeSidebarItem === "spaces" ? (
                       <SpacesView
@@ -936,6 +999,7 @@ const App = () => {
                         settings={settings}
                         onToggleClockMode={handleToggleClockMode}
                         reminders={reminders}
+                        quickLinks={quickLinksData}
                         now={now}
                         topSites={topSites}
                         onEditReminder={(r) => {
@@ -949,6 +1013,25 @@ const App = () => {
                           setModalInitialData(null);
                           setIsModalOpen(true);
                         }}
+                        onAddQuickLink={() => {
+                          setModalForceType("bookmark");
+                          setModalInitialData({
+                            id: "",
+                            title: "",
+                            url: "",
+                            type: "quicklink" as any,
+                          });
+                          setIsModalOpen(true);
+                        }}
+                        onEditQuickLink={(link) => {
+                          setModalInitialData({
+                            ...link,
+                            type: "quicklink" as any,
+                          });
+                          setModalForceType("bookmark");
+                          setIsModalOpen(true);
+                        }}
+                        onDeleteQuickLink={(id) => deleteItem(id)}
                       />
                     )}
                   </div>

@@ -1,46 +1,37 @@
-import { useState } from "react";
 import { Card } from "../components/Card";
-import { Bell, Plus, ExternalLink } from "lucide-react";
-import { Settings } from "../types";
+import { Bell, Plus, ExternalLink, Trash2, Edit2 } from "lucide-react";
+import { Settings, BookmarkItem } from "../types";
 
 interface DashboardProps {
   settings: Settings;
   onToggleClockMode: () => void;
   reminders: any[];
+  quickLinks: BookmarkItem[];
   now: number;
   topSites: any[];
   onEditReminder: (r: any) => void;
   onDeleteReminder: (id: string) => void;
   onCreateReminder: () => void;
+  onAddQuickLink: () => void;
+  onEditQuickLink: (link: BookmarkItem) => void;
+  onDeleteQuickLink: (id: string) => void;
 }
 
 export function DashboardView({
-  
   settings,
   onToggleClockMode,
   reminders,
+  quickLinks,
   now,
   topSites,
   onEditReminder,
   onDeleteReminder,
   onCreateReminder,
+  onAddQuickLink,
+  onEditQuickLink,
+  onDeleteQuickLink,
 }: DashboardProps) {
-  const [quickLinks, setQuickLinks] = useState<
-    Array<{ name: string; url: string; icon?: string }>
-  >([]);
-  const [showAddLink, setShowAddLink] = useState(false);
-
-  const handleAddLink = () => {
-    const name = prompt("Link Name:");
-    const url = prompt("Link URL:");
-    if (name && url) {
-      setQuickLinks([...quickLinks, { name, url }]);
-    }
-    setShowAddLink(false);
-  };
-
   return (
-
     <div className="animate-in fade-in duration-500">
       <div className="flex flex-col gap-6">
           {/* Active Reminders */}
@@ -84,7 +75,7 @@ export function DashboardView({
                 <ExternalLink size={16} className="text-accent" /> Quick Links
               </h2>
               <button
-                onClick={handleAddLink}
+                onClick={onAddQuickLink}
                 className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-bold hover:bg-accent/20 transition-all flex items-center gap-1"
               >
                 <Plus size={14} /> Add Link
@@ -93,30 +84,50 @@ export function DashboardView({
 
             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
               {/* Display custom quick links */}
-              {quickLinks.map((link, idx) => (
-                <a
-                  key={idx}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-bg-card border border-transparent hover:border-accent/40 transition-all group"
-                >
-                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <img
-                      src={
-                        link.icon ||
-                        `https://www.google.com/s2/favicons?domain=${
-                          new URL(link.url).hostname
-                        }&sz=64`
-                      }
-                      alt={link.name}
-                      className="w-8 h-8 object-contain"
-                    />
+              {quickLinks.map((link) => (
+                <div key={link.id} className="relative group/ql">
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-bg-card border border-transparent hover:border-accent/40 transition-all group"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <img
+                        src={`https://www.google.com/s2/favicons?domain=${
+                          link.url || ""
+                        }&sz=64`}
+                        alt={link.title}
+                        className="w-8 h-8 object-contain"
+                      />
+                    </div>
+                    <span className="text-[11px] font-medium text-text-primary text-center truncate w-full">
+                      {link.title}
+                    </span>
+                  </a>
+                  
+                  {/* Edit/Delete Actions */}
+                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/ql:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onEditQuickLink(link);
+                      }}
+                      className="p-1 rounded-md bg-bg-card border border-border-card text-text-secondary hover:text-accent transition-colors"
+                    >
+                      <Edit2 size={10} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onDeleteQuickLink(link.id);
+                      }}
+                      className="p-1 rounded-md bg-bg-card border border-border-card text-text-secondary hover:text-red-400 transition-colors"
+                    >
+                      <Trash2 size={10} />
+                    </button>
                   </div>
-                  <span className="text-[11px] font-medium text-text-primary text-center truncate w-full">
-                    {link.name}
-                  </span>
-                </a>
+                </div>
               ))}
 
               {/* Display top sites if no custom links */}
