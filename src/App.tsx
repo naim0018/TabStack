@@ -18,13 +18,20 @@ import { Clock as ClockWidget, Calendar } from "./components/Widgets";
 import { ChevronDown, ExternalLink, Folder } from "lucide-react";
 
 // --- Sync Helpers ---
+/**
+ * encodeMetaToUrl
+ * Embeds custom metadata (description, deadline, type) into the bookmark URL's hash.
+ * This ensures that metadata is synced across devices because Chrome syncs bookmark URLs.
+ * @param url The base URL
+ * @param meta The metadata object to encode
+ */
 const encodeMetaToUrl = (url: string, meta: any) => {
   try {
     const cleanUrl = url || "about:blank";
     const [base, hash] = cleanUrl.split("#");
     const hashParams = new URLSearchParams(hash || "");
     const metaStr = JSON.stringify(meta);
-    const encoded = btoa(encodeURIComponent(metaStr));
+    const encoded = btoa(encodeURIComponent(metaStr)); // Base64 encode for URL safety
     hashParams.set("tsmeta", encoded);
     return `${base}#${hashParams.toString()}`;
   } catch (e) {
@@ -32,6 +39,11 @@ const encodeMetaToUrl = (url: string, meta: any) => {
   }
 };
 
+/**
+ * decodeMetaFromUrl
+ * Extracts metadata from a bookmark URL that was previously encoded.
+ * @param url The bookmark URL
+ */
 const decodeMetaFromUrl = (url: string) => {
   try {
     if (!url || !url.includes("#")) return {};
@@ -97,9 +109,14 @@ const App = () => {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const isMoving = React.useRef(false);
 
-  // Load Data
+  // --- Data Loading & Lifecycle ---
+  /**
+   * refreshData
+   * The core engine for fetching state from Chrome. 
+   * It handles tree discovery, folder migrations, and metadata merging.
+   */
   const refreshData = async () => {
-    if (isMoving.current) return;
+    if (isMoving.current) return; // Prevent concurrent modifications
     try {
       const [t, tr, m, ts] = await Promise.all([
         chromeApi.getTabs(),
@@ -859,9 +876,31 @@ const App = () => {
                         settings={settings}
                         setSettings={setSettings}
                       />
-                    ) : (
+                    ) : settings.activeSidebarItem === "bookmarks" ? (
                       <BookmarksView
                         settings={settings}
+                        tabs={tabs}
+                        flatFolders={flatFolders}
+                        looseBookmarks={looseBookmarks}
+                        searchQuery={searchQuery}
+                        now={now}
+                        draggingId={draggingId}
+                        onToggleSection={handleToggleSection}
+                        onDrop={handleDrop}
+                        onDragStart={handleDragStart}
+                        onItemClick={handleCardClick}
+                        onItemEdit={(item: any) => {
+                          setModalForceType(null);
+                          setModalInitialData(item);
+                          setIsModalOpen(true);
+                        }}
+                        onItemDelete={(item: any) => deleteItem(item.id)}
+                        onTabClose={(item) => chromeApi.closeTab(item.id)}
+                        onCreateBookmark={() => {
+                          setModalForceType("bookmark");
+                          setModalInitialData(null);
+                          setIsModalOpen(true);
+                        }}
                         onToggleViewMode={() =>
                           setSettings((s) => ({
                             ...s,
@@ -891,31 +930,11 @@ const App = () => {
                             }));
                           }
                         }}
-                        tabs={tabs}
-                        flatFolders={flatFolders}
-                        looseBookmarks={looseBookmarks}
-                        searchQuery={searchQuery}
-                        now={now}
-                        draggingId={draggingId}
-                        onToggleSection={handleToggleSection}
-                        onDrop={handleDrop}
-                        onDragStart={handleDragStart}
-                        onItemClick={handleCardClick}
-                        onItemEdit={(item: any) => {
-                          setModalInitialData({
-                            ...item,
-                            type: "bookmark",
-                          });
-                          setModalForceType("bookmark");
-                          setIsModalOpen(true);
-                        }}
-                        onItemDelete={(item: any) => deleteItem(item.id)}
-                        onTabClose={(item) => chromeApi.closeTab(item.id)}
-                        onCreateBookmark={() => {
-                          setModalForceType("bookmark");
-                          setModalInitialData(null);
-                          setIsModalOpen(true);
-                        }}
+                      />
+                    ) : (
+                      <DashboardView
+                        settings={settings}
+                        setSettings={setSettings}
                       />
                     )}
                   </div>

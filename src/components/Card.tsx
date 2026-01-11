@@ -194,7 +194,7 @@ export function Card({
       onClick={handleCardClick}
       onDragStart={onDragStart}
       draggable={!isTab && item.id !== undefined}
-      className={`
+      className={` w-[200px] h-[50px]
         glass group relative p-2 rounded-xl border transition-all duration-300 backdrop-blur-md overflow-hidden
         ${
           isTab
