@@ -15,6 +15,7 @@ interface DashboardProps {
 }
 
 export function DashboardView({
+  
   settings,
   onToggleClockMode,
   reminders,

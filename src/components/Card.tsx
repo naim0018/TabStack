@@ -1,16 +1,9 @@
-import React, { useState } from "react";
-import {
-  X,
-  Edit2,
-  Trash2,
-  Clock,
-  Folder as FolderIcon,
-  FileText,
-  Bell,
-  ExternalLink,
-  Copy,
-  Check,
-} from "lucide-react";
+import React from "react";
+import { TabCard } from "./Cards/TabCard";
+import { NoteCard } from "./Cards/NoteCard";
+import { ReminderCard } from "./Cards/ReminderCard";
+import { FolderCard } from "./Cards/FolderCard";
+import { BookmarkCard } from "./Cards/BookmarkCard";
 
 export interface CardItem {
   id: string;
@@ -47,362 +40,68 @@ export function Card({
   now = Date.now(),
   viewMode = "grid",
 }: CardProps) {
-  const [copied, setCopied] = useState(false);
   const isFolder = item.children !== undefined || item.type === "folder";
   const isNote = item.type === "note";
   const isReminder = item.type === "reminder" || !!item.deadline;
 
-  // Favicon logic
-  const getFavicon = () => {
-    if (isTab && item.favIconUrl) return item.favIconUrl;
-    if (item.url && item.url !== "about:blank")
-      return `https://www.google.com/s2/favicons?domain=${item.url}&sz=64`;
-    return null;
-  };
-  const favUrl = getFavicon();
-
-  let hostname = "";
-  try {
-    if (item.url && item.url !== "about:blank")
-      hostname = new URL(item.url).hostname;
-  } catch (e) {}
-
-  // Countdown logic for reminders
-  let countdownText = "";
-  let isPast = false;
-  let isUrgent = false; // < 48 hours
-  if (isReminder && item.deadline) {
-    const diff = new Date(item.deadline).getTime() - now;
-    isPast = diff <= 0;
-    isUrgent = diff > 0 && diff < 48 * 60 * 60 * 1000;
-    const absDiff = Math.abs(diff);
-    const d = Math.floor(absDiff / (1000 * 60 * 60 * 24));
-    const h = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / 3600000);
-    const m = Math.floor((absDiff % 3600000) / 60000);
-    const s = Math.floor((absDiff % 60000) / 1000);
-
-    if (d > 0) countdownText = `${d}d ${h}h ${m}m ${s}s`;
-    else if (h > 0) countdownText = `${h}h ${m}m ${s}s`;
-    else countdownText = `${m}m ${s}s`;
+  if (isTab) {
+    return (
+      <TabCard
+        item={item}
+        onClose={onClose}
+        onClick={onClick}
+        onDragStart={onDragStart}
+        viewMode={viewMode}
+      />
+    );
   }
 
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (item.url && item.url !== "about:blank") {
-      navigator.clipboard.writeText(item.url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleCardClick = () => {
-    if (isReminder && item.url && item.url !== "about:blank") {
-      window.location.href = item.url;
-    } else if (onClick) {
-      onClick();
-    }
-  };
-
-  if (viewMode === "list") {
+  if (isNote) {
     return (
-      <div
-        onClick={handleCardClick}
+      <NoteCard
+        item={item}
+        onEdit={onEdit}
+        onDelete={onDelete}
         onDragStart={onDragStart}
-        draggable={!isTab && item.id !== undefined}
-        className={`group relative flex items-center gap-3 p-2.5 rounded-lg border border-transparent hover:bg-bg-card hover:border-border-card transition-all cursor-pointer ${
-          isTab ? "bg-bg-card/30" : ""
-        }`}
-      >
-        <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center text-text-secondary">
-          {isFolder ? (
-            <FolderIcon size={16} className="text-accent" />
-          ) : isNote ? (
-            <FileText size={16} className="text-accent" />
-          ) : isReminder ? (
-            <Bell
-              size={16}
-              className={isPast || isUrgent ? "text-danger" : "text-accent"}
-            />
-          ) : favUrl ? (
-            <img src={favUrl} alt="" className="w-4 h-4 object-contain" />
-          ) : (
-            <div className="w-3 h-3 rounded-full border border-currentColor opacity-50" />
-          )}
-        </div>
+        viewMode={viewMode}
+      />
+    );
+  }
 
-        <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <div className="text-[13px] text-text-primary truncate group-hover:text-accent transition-colors">
-            {item.title || "Untitled"}
-          </div>
-          {item.description && (
-            <div className="text-[10px] text-text-secondary truncate opacity-60">
-              {item.description}
-            </div>
-          )}
-        </div>
+  if (isReminder) {
+    return (
+      <ReminderCard
+        item={item}
+        now={now}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onDragStart={onDragStart}
+        viewMode={viewMode}
+      />
+    );
+  }
 
-        {/* Actions - Show on Hover */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {item.url && item.url !== "about:blank" && (
-            <button
-              onClick={handleCopy}
-              className="p-1 hover:text-accent text-text-secondary transition-colors"
-              title="Copy"
-            >
-              <Copy size={12} />
-            </button>
-          )}
-          {isTab ? (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose?.();
-              }}
-              className="p-1 hover:text-danger text-text-secondary transition-colors"
-            >
-              <X size={12} />
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit?.();
-                }}
-                className="p-1 hover:text-accent text-text-secondary transition-colors"
-              >
-                <Edit2 size={12} />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete?.();
-                }}
-                className="p-1 hover:text-danger text-text-secondary transition-colors"
-              >
-                <Trash2 size={12} />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+  if (isFolder) {
+    return (
+      <FolderCard
+        item={item}
+        onClick={onClick}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onDragStart={onDragStart}
+        viewMode={viewMode}
+      />
     );
   }
 
   return (
-    <div
-      onClick={handleCardClick}
+    <BookmarkCard
+      item={item}
+      onClick={onClick}
+      onEdit={onEdit}
+      onDelete={onDelete}
       onDragStart={onDragStart}
-      draggable={!isTab && item.id !== undefined}
-      className={` w-[200px] h-[50px]
-        glass group relative p-2 rounded-xl border transition-all duration-300 backdrop-blur-md overflow-hidden
-        ${
-          isTab
-            ? "min-h-[60px] hover:border-accent/40 bg-bg-card/50"
-            : "cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:shadow-accent/5"
-        }
-        ${
-          isReminder && (isPast || isUrgent)
-            ? "bg-danger/5 border-danger/20 hover:border-danger/40"
-            : "bg-bg-card border-border-card hover:border-accent"
-        }
-        ${isNote ? "min-h-[160px]" : isReminder ? "min-h-[140px]" : ""}
-      `}
-    >
-      <div className="flex items-start gap-3 w-full relative z-10">
-        <div
-          className={`
-          w-9 h-9 border border-border-card rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110
-          ${
-            isFolder
-              ? "bg-accent/10 text-accent"
-              : isNote
-              ? "bg-accent/10 text-accent"
-              : isReminder
-              ? isPast || isUrgent
-                ? "bg-danger/10 text-danger"
-                : "bg-accent/10 text-accent"
-              : "bg-border-card/20 text-text-secondary"
-          }
-        `}
-        >
-          {isFolder ? (
-            <FolderIcon size={18} fill="currentColor" fillOpacity={0.2} />
-          ) : isNote ? (
-            <FileText size={18} />
-          ) : isReminder ? (
-            <Bell size={18} className={isPast ? "animate-pulse" : ""} />
-          ) : favUrl ? (
-            <img src={favUrl} alt="" className="w-5 h-5 object-contain" />
-          ) : (
-            <div className="w-4 h-4 rounded-full border-2 border-currentColor" />
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div
-            className={`text-[13px] text-text-primary truncate transition-colors group-hover:text-accent mb-0.5`}
-          >
-            {item.title || "Untitled"}
-          </div>
-          <div className="flex items-center gap-1.5 min-w-0">
-            {hostname ? (
-              <>
-                <span className="text-[10px] text-text-secondary truncate">
-                  {hostname}
-                </span>
-                <ExternalLink
-                  size={12}
-                  className="text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                />
-              </>
-            ) : (
-              <span className="text-[10px] text-text-secondary font-medium tracking-wide">
-                {isFolder
-                  ? "FOLDER"
-                  : isNote
-                  ? "NOTE"
-                  : isReminder
-                  ? "REMINDER"
-                  : isTab
-                  ? "OPEN TAB"
-                  : "BOOKMARK"}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {(item.dateAdded || item.description || item.deadline) && (
-        <div className="mt-3 flex flex-col gap-2 w-full relative z-10">
-          {isReminder && item.deadline && (
-            <div
-              className={`
-              px-3 py-2.5 rounded-xl flex flex-col gap-2 bg-gradient-to-br transition-all duration-300 border
-              ${
-                isPast || isUrgent
-                  ? "from-danger/10 to-danger/5 border-danger/20 shadow-sm shadow-danger/5"
-                  : "from-accent/10 to-accent/5 border-accent/20 shadow-sm shadow-accent/5"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-secondary">
-                  <Clock
-                    size={12}
-                    className={
-                      isPast || isUrgent ? "text-danger" : "text-accent"
-                    }
-                  />
-                  <span
-                    className={
-                      isPast || isUrgent ? "text-danger" : "text-accent"
-                    }
-                  >
-                    {isPast ? "Expired" : "Deadline"}
-                  </span>
-                </div>
-                {countdownText && (
-                  <div
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border transition-all ${
-                      isPast || isUrgent
-                        ? "text-danger border-danger/30 bg-danger/10 animate-pulse"
-                        : "text-accent border-accent/30 bg-accent/10"
-                    }`}
-                  >
-                    {countdownText}
-                  </div>
-                )}
-              </div>
-              <div
-                className={`text-[12px] font-bold flex items-center gap-2 ${
-                  isPast || isUrgent ? "text-danger/90" : "text-text-primary/80"
-                }`}
-              >
-                {new Date(item.deadline).toLocaleString([], {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                  hour12: true,
-                })}
-              </div>
-            </div>
-          )}
-
-          {item.description && (
-            <p
-              className={`
-               text-[11px] text-text-secondary/80 leading-relaxed px-1
-               ${isNote || isReminder ? "" : "line-clamp-2"}
-             `}
-            >
-              {item.description}
-            </p>
-          )}
-
-          {!isReminder && item.dateAdded && (
-            <div className="flex items-center gap-1.5 text-[9px] text-text-secondary/40 uppercase tracking-widest mt-1">
-              <span>{new Date(item.dateAdded).toLocaleDateString()}</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Decorative background for highlights */}
-      {(isNote || isReminder) && (
-        <div className="absolute right-0 bottom-0 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity translate-x-1/4 translate-y-1/4">
-          {isNote ? <FileText size={140} /> : <Bell size={140} />}
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0 z-20">
-        {item.url && item.url !== "about:blank" && (
-          <button
-            onClick={handleCopy}
-            className={`w-7 h-7 flex items-center justify-center rounded-lg bg-bg-card border transition-all shadow-sm ${
-              copied
-                ? "text-accent border-accent"
-                : "border-border-card text-text-secondary hover:bg-accent hover:border-accent hover:text-white"
-            }`}
-            title="Copy Link"
-          >
-            {copied ? <Check size={12} /> : <Copy size={12} />}
-          </button>
-        )}
-        {isTab ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose?.();
-            }}
-            className="w-7 h-7 flex items-center justify-center rounded-lg bg-bg-card border border-border-card text-text-secondary hover:bg-danger hover:border-danger hover:text-white transition-all shadow-sm"
-          >
-            <X size={14} />
-          </button>
-        ) : (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit?.();
-              }}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-bg-card border border-border-card text-text-secondary hover:bg-accent hover:border-accent hover:text-white transition-all shadow-sm"
-            >
-              <Edit2 size={12} />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete?.();
-              }}
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-bg-card border border-border-card text-text-secondary hover:bg-danger hover:border-danger hover:text-white transition-all shadow-sm"
-            >
-              <Trash2 size={12} />
-            </button>
-          </>
-        )}
-      </div>
-    </div>
+      viewMode={viewMode}
+    />
   );
 }

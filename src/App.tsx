@@ -934,7 +934,21 @@ const App = () => {
                     ) : (
                       <DashboardView
                         settings={settings}
-                        setSettings={setSettings}
+                        onToggleClockMode={handleToggleClockMode}
+                        reminders={reminders}
+                        now={now}
+                        topSites={topSites}
+                        onEditReminder={(r) => {
+                          setModalForceType(null);
+                          setModalInitialData(r);
+                          setIsModalOpen(true);
+                        }}
+                        onDeleteReminder={(id) => deleteItem(id)}
+                        onCreateReminder={() => {
+                          setModalForceType("reminder");
+                          setModalInitialData(null);
+                          setIsModalOpen(true);
+                        }}
                       />
                     )}
                   </div>
