@@ -78,9 +78,9 @@ export function SectionList({
           ? "flex flex-col gap-1"
           : `grid ${
               settings.gridMode === "horizontal"
-                ? "grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
+                ? "grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"
                 : "flex flex-col"
-            } gap-4 animate-in fade-in slide-in-from-top-2 duration-300 min-h-[50px] transition-all`
+            } gap-5 animate-in fade-in slide-in-from-top-2 duration-300 min-h-[50px] transition-all`
       }
     >
       {filteredItems.map((item: any) => {
@@ -101,7 +101,15 @@ export function SectionList({
         );
 
         if (isSortable) {
-           return <SortableItem key={uniqueId} id={uniqueId} className={isTabSection ? "" : "h-full"}>{cardNode}</SortableItem>;
+          return (
+            <SortableItem
+              key={uniqueId}
+              id={uniqueId}
+              className={isTabSection ? "" : "min-h-0"}
+            >
+              {cardNode}
+            </SortableItem>
+          );
         }
         return <React.Fragment key={uniqueId}>{cardNode}</React.Fragment>;
       })}

@@ -1125,40 +1125,6 @@ const App = () => {
                     <div className="glass border border-border-card rounded-3xl overflow-hidden backdrop-blur-md shadow-sm">
                       <Calendar />
                     </div>
-
-                    {/* Most Visited Sites */}
-                    {topSites.length > 0 && (
-                      <div className="glass border border-border-card rounded-3xl p-5 backdrop-blur-md shadow-sm">
-                        <h3 className="text-sm font-black text-text-primary uppercase tracking-tight mb-4 flex items-center gap-2">
-                          <ExternalLink size={14} className="text-accent" />
-                          Most Visited
-                        </h3>
-                        <div className="grid grid-cols-2 gap-3">
-                          {topSites
-                            .slice(0, 6)
-                            .map((site: any, idx: number) => (
-                              <a
-                                key={idx}
-                                href={site.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex flex-col items-center gap-2 p-3 rounded-xl border border-transparent hover:border-accent/40 hover:bg-white/5 transition-all cursor-pointer group"
-                              >
-                                <img
-                                  src={`https://www.google.com/s2/favicons?domain=${
-                                    site.url || ""
-                                  }&sz=64`}
-                                  className="w-8 h-8 group-hover:opacity-100 group-hover:scale-110 transition-all"
-                                  alt=""
-                                />
-                                <div className="text-[10px] font-bold text-text-primary text-center truncate w-full">
-                                  {site.title}
-                                </div>
-                              </a>
-                            ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
