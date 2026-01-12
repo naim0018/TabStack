@@ -60,6 +60,7 @@ export function Card({
     return (
       <NoteCard
         item={item}
+        onClick={onClick}
         onEdit={onEdit}
         onDelete={onDelete}
         onDragStart={onDragStart}
@@ -73,6 +74,7 @@ export function Card({
       <ReminderCard
         item={item}
         now={now}
+        onClick={onClick}
         onEdit={onEdit}
         onDelete={onDelete}
         onDragStart={onDragStart}

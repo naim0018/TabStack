@@ -1,5 +1,5 @@
 import { Card } from "../components/Card";
-import { Bell, Plus, ExternalLink, Trash2, Edit2 } from "lucide-react";
+import { Bell, Plus, ExternalLink, Trash2, Edit2, Clock } from "lucide-react";
 import { Settings, BookmarkItem } from "../types";
 
 interface DashboardProps {
@@ -9,6 +9,7 @@ interface DashboardProps {
   quickLinks: BookmarkItem[];
   now: number;
   topSites: any[];
+  history: chrome.history.HistoryItem[];
   onEditReminder: (r: any) => void;
   onDeleteReminder: (id: string) => void;
   onCreateReminder: () => void;
@@ -21,9 +22,10 @@ export function DashboardView({
   settings,
   onToggleClockMode,
   reminders,
-  quickLinks,
+  quickLinks = [],
   now,
-  topSites,
+  topSites = [],
+  history = [],
   onEditReminder,
   onDeleteReminder,
   onCreateReminder,
@@ -35,7 +37,7 @@ export function DashboardView({
     <div className="animate-in fade-in duration-500">
       <div className="flex flex-col gap-6">
           {/* Active Reminders */}
-          <div className="glass border border-border-card rounded-3xl p-6 min-h-[400px]">
+          <div className="glass border border-border-card rounded-3xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-sm font-black uppercase tracking-tight flex items-center gap-2 text-text-primary">
                 <Bell size={16} className="text-accent" /> Active Reminders
@@ -68,33 +70,32 @@ export function DashboardView({
             )}
           </div>
 
-          {/* Most Visited Sites */}
-          {topSites.length > 0 && (
-            <div className="glass border border-border-card rounded-3xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-sm font-black uppercase tracking-tight flex items-center gap-2 text-text-primary">
-                  <ExternalLink size={16} className="text-accent" /> Most Visited
+          {/* Most Visited Sites (Compact) */}
+          {topSites?.length > 0 && (
+            <div className="glass border border-border-card rounded-3xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-text-secondary">
+                  <ExternalLink size={14} className="text-accent/60" /> Most Visited
                 </h2>
               </div>
-              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
+              <div className="flex flex-wrap gap-2">
                 {topSites.slice(0, 10).map((site: any, idx: number) => (
                   <a
                     key={idx}
                     href={site.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-bg-card border border-transparent hover:border-accent/40 transition-all group"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all group max-w-[160px]"
+                    title={site.title}
                   >
-                    <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <img
-                        src={`https://www.google.com/s2/favicons?domain=${
-                          site.url || ""
-                        }&sz=64`}
-                        alt={site.title}
-                        className="w-8 h-8 object-contain"
-                      />
-                    </div>
-                    <span className="text-[11px] font-medium text-text-primary text-center truncate w-full">
+                    <img
+                      src={`https://www.google.com/s2/favicons?domain=${
+                        site.url || ""
+                      }&sz=32`}
+                      alt=""
+                      className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity"
+                    />
+                    <span className="text-[11px] font-bold text-text-primary truncate">
                       {site.title}
                     </span>
                   </a>
@@ -102,6 +103,41 @@ export function DashboardView({
               </div>
             </div>
           )}
+
+          {/* Last Visited Sites (Compact) */}
+          {history?.length > 0 && (
+            <div className="glass border border-border-card rounded-3xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-text-secondary">
+                  <Clock size={14} className="text-accent/60" /> Recently Visited ({history.length})
+                </h2>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                {history.map((item: any, idx: number) => (
+                  <a
+                    key={idx}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-bg-card/50 border border-border-card/50 hover:border-accent/30 hover:bg-accent/5 transition-all group overflow-hidden"
+                    title={item.title || item.url}
+                  >
+                    <img
+                      src={`https://www.google.com/s2/favicons?domain=${
+                        item.url || ""
+                      }&sz=32`}
+                      alt=""
+                      className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    />
+                    <span className="text-[10px] font-medium text-text-secondary group-hover:text-text-primary truncate">
+                      {item.title || "Untitled"}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
       </div>
 
       {/* macOS Style Floating Dock */}
@@ -135,7 +171,7 @@ export function DashboardView({
               <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover/ql:opacity-100 transition-opacity scale-75 group-hover/ql:scale-100 duration-300">
                 <button
                   onClick={(e) => {
-                    e.preventDefault();
+                    e.stopPropagation();
                     onEditQuickLink(link);
                   }}
                   className="p-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-accent transition-colors shadow-lg"
@@ -144,7 +180,7 @@ export function DashboardView({
                 </button>
                 <button
                   onClick={(e) => {
-                    e.preventDefault();
+                    e.stopPropagation();
                     onDeleteQuickLink(link.id);
                   }}
                   className="p-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-red-500 transition-colors shadow-lg"

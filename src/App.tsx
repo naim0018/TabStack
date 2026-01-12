@@ -76,6 +76,22 @@ const getCleanUrlFromUrl = (url: string | undefined): string => {
     return url || "";
   }
 };
+/**
+ * enrichItem
+ * Combines a base bookmark node with metadata from URL hashes and sync storage.
+ * URL hashes are treated as the primary source of truth for better cross-device sync.
+ */
+const enrichItem = (node: any, metadata: Record<string, any> = {}): any => {
+  if (!node) return null;
+  const urlMeta = decodeMetaFromUrl(node.url);
+  const syncMeta = metadata[node.id] || {};
+  return {
+    ...node,
+    ...syncMeta,
+    ...urlMeta, // URL hash takes priority for sync
+  };
+};
+
 // --------------------
 
 const App = () => {
@@ -89,6 +105,7 @@ const App = () => {
   const [topSites, setTopSites] = useState<chrome.topSites.MostVisitedURL[]>(
     []
   );
+  const [history, setHistory] = useState<chrome.history.HistoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [now, setNow] = useState(Date.now());
   const [tabStackFolderId, setTabStackFolderId] = useState<string | null>(null);
@@ -139,16 +156,18 @@ const App = () => {
   const refreshData = async () => {
     if (isMoving.current) return; // Prevent concurrent modifications
     try {
-      const [t, tr, m, ts] = await Promise.all([
+      const [t, tr, m, ts, h] = await Promise.all([
         chromeApi.getTabs(),
         chromeApi.getTree(),
         chromeApi.getMetadata(),
         chromeApi.getTopSites(),
+        chromeApi.getHistory(20),
       ]);
-      setTabs(t);
-      setTree(tr);
-      setMetadata(m);
-      setTopSites(ts.slice(0, 10));
+      setTabs(t || []);
+      setTree(tr || []);
+      setMetadata(m || {});
+      setTopSites((ts || []).slice(0, 10));
+      setHistory(h || []);
 
       const findFolder = (
         nodes: any[],
@@ -299,24 +318,32 @@ const App = () => {
         isMoving.current = false;
       }
 
-      // 5. Move out-of-place reminders
-      const outOfPlace: any[] = [];
-      const findOutOfPlace = (nodes: any[]) => {
-        for (let n of nodes) {
-          if (m[n.id]?.type === "reminder" && n.parentId !== remFolderNode.id) {
-            outOfPlace.push(n);
+      // 5. Move out-of-place items (Reminders and Notes)
+      if (!isMoving.current) {
+        const outOfPlace: { id: string; targetId: string }[] = [];
+        const findMisplaced = (nodes: any[]) => {
+          for (let n of nodes) {
+            const enriched = enrichItem(n, m);
+            if (enriched.type === "reminder" && n.parentId !== remFolderNode.id) {
+              outOfPlace.push({ id: n.id, targetId: remFolderNode.id });
+            } else if (
+              enriched.type === "note" &&
+              n.parentId !== notesFolderNode.id
+            ) {
+              outOfPlace.push({ id: n.id, targetId: notesFolderNode.id });
+            }
+            if (n.children) findMisplaced(n.children);
           }
-          if (n.children) findOutOfPlace(n.children);
-        }
-      };
-      findOutOfPlace(tr);
+        };
+        findMisplaced(tr);
 
-      if (outOfPlace.length > 0 && !isMoving.current) {
-        isMoving.current = true;
-        for (const item of outOfPlace) {
-          await chromeApi.moveBookmark(item.id, { parentId: remFolderNode.id });
+        if (outOfPlace.length > 0) {
+          isMoving.current = true;
+          for (const item of outOfPlace) {
+            await chromeApi.moveBookmark(item.id, { parentId: item.targetId });
+          }
+          isMoving.current = false;
         }
-        isMoving.current = false;
       }
 
       // 6. Discover boards inside TabStack parent
@@ -374,7 +401,7 @@ const App = () => {
       console.error("Failed to refresh data", err);
     }
   };
-
+ 
   useEffect(() => {
     const loadInitialSettings = async () => {
       const syncedSettings = await chromeApi.getSettings(DEFAULT_SETTINGS);
@@ -480,8 +507,7 @@ const App = () => {
             )
               return; // Skip
 
-            const urlMeta = decodeMetaFromUrl(child.url);
-            const enriched = { ...child, ...urlMeta, ...metadata[child.id] };
+            const enriched = enrichItem(child, metadata);
 
             if (!child.children) {
               all.push(enriched);
@@ -523,14 +549,11 @@ const App = () => {
 
     return folder.children
       .map((n: any) => {
-        const urlMeta = decodeMetaFromUrl(n.url);
-        return {
-          ...n,
-          ...urlMeta,
-          ...metadata[n.id],
-          type: "reminder",
-        };
+        const enriched = enrichItem(n, metadata);
+        if (!enriched.type) enriched.type = "reminder";
+        return enriched;
       })
+      .filter((n: any) => n.type === "reminder")
       .sort((a: any, b: any) => {
         const da = a.deadline ? new Date(a.deadline).getTime() : 0;
         const db = b.deadline ? new Date(b.deadline).getTime() : 0;
@@ -555,15 +578,13 @@ const App = () => {
     const folder = findFolder(tree);
     if (!folder || !folder.children) return [];
 
-    return folder.children.map((n: any) => {
-      const urlMeta = decodeMetaFromUrl(n.url);
-      return {
-        ...n,
-        ...urlMeta,
-        ...metadata[n.id],
-        type: "note",
-      };
-    });
+    return folder.children
+      .map((n: any) => {
+        const enriched = enrichItem(n, metadata);
+        if (!enriched.type) enriched.type = "note";
+        return enriched;
+      })
+      .filter((n: any) => n.type === "note");
   }, [tree, notesFolderId, metadata]);
 
   const quickLinksData = useMemo(() => {
@@ -581,15 +602,7 @@ const App = () => {
     const folder = findFolder(tree);
     if (!folder || !folder.children) return [];
 
-    return folder.children.map((n: any) => {
-      const urlMeta = decodeMetaFromUrl(n.url);
-      return {
-        ...n,
-        ...urlMeta,
-        ...metadata[n.id],
-        type: "bookmark",
-      };
-    });
+    return folder.children.map((n: any) => enrichItem(n, metadata));
   }, [tree, quickLinksFolderId, metadata]);
 
   // Handlers
@@ -751,7 +764,6 @@ const App = () => {
           title,
         };
 
-        // Encode metadata into URL for robust sync
         const baseUrl =
           url || (type === "reminder" || type === "note" ? "about:blank" : "");
         if (type !== "folder") {
@@ -766,6 +778,32 @@ const App = () => {
           updateParams.url = encodeMetaToUrl(url || "", metaToSave);
         }
         await chromeApi.updateBookmark(id, updateParams);
+
+        // Check for relocation if type changed or it's misplaced
+        const targetParentId =
+          type === "note"
+            ? notesFolderId
+            : type === "reminder"
+            ? remindersFolderId
+            : null;
+
+        if (targetParentId) {
+          // We need current node to check parent
+          const findNode = (nodes: any[]): any => {
+            for (let n of nodes) {
+              if (n.id === id) return n;
+              if (n.children) {
+                const f = findNode(n.children);
+                if (f) return f;
+              }
+            }
+            return null;
+          };
+          const node = findNode(tree);
+          if (node && node.parentId !== targetParentId) {
+            await chromeApi.moveBookmark(id, { parentId: targetParentId });
+          }
+        }
       }
 
       if (savedId) {
@@ -779,6 +817,7 @@ const App = () => {
       console.error("Failed to save metadata", e);
     }
   };
+
 
   const handleCreateBoard = async () => {
     const name = prompt("Enter Board Name:");
@@ -999,6 +1038,7 @@ const App = () => {
                         quickLinks={quickLinksData}
                         now={now}
                         topSites={topSites}
+                        history={history}
                         onCreateReminder={() => {
                           setModalForceType("reminder");
                           setModalInitialData(null);
@@ -1156,6 +1196,7 @@ const App = () => {
                         quickLinks={quickLinksData}
                         now={now}
                         topSites={topSites}
+                        history={history}
                         onEditReminder={(r) => {
                           setModalForceType(null);
                           setModalInitialData({

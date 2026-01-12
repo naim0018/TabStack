@@ -1,4 +1,7 @@
-export const isExtension = typeof chrome !== 'undefined' && !!chrome.bookmarks;
+// Standard check for extension environment
+export const isExtension = typeof chrome !== 'undefined' && typeof chrome.runtime !== 'undefined' && !!chrome.runtime.id;
+
+console.log('TabStack Environment:', isExtension ? 'Extension' : 'Web/Dev');
 
 const mockBookmarks = [
   {
@@ -47,8 +50,39 @@ export const chromeApi = {
      * @returns {Promise<chrome.topSites.MostVisitedURL[]>} A promise that resolves with an array of top site URLs.
      */
     getTopSites: async (): Promise<chrome.topSites.MostVisitedURL[]> => {
-        if (isExtension && chrome.topSites) return new Promise((resolve) => chrome.topSites.get(resolve));
+        if (isExtension && chrome.topSites) {
+            return new Promise((resolve) => chrome.topSites.get((sites) => {
+                console.log('Top Sites fetched:', sites?.length);
+                resolve(sites);
+            }));
+        }
+        console.log('Using mock top sites');
         return mockTopSites as unknown as chrome.topSites.MostVisitedURL[];
+    },
+    /**
+     * Fetches recent browsing history from the Chrome API.
+     * If not in an extension environment, returns empty history.
+     * @returns {Promise<chrome.history.HistoryItem[]>} A promise that resolves with an array of history items.
+     */
+    getHistory: async (maxResults: number = 20): Promise<chrome.history.HistoryItem[]> => {
+        if (isExtension && chrome.history) {
+            return new Promise((resolve) => {
+                chrome.history.search({ text: '', maxResults }, (results) => {
+                    if (chrome.runtime.lastError) {
+                        console.error('History fetch error:', chrome.runtime.lastError);
+                        resolve([]);
+                        return;
+                    }
+                    console.log('History fetched count:', results?.length);
+                    resolve(results || []);
+                });
+            });
+        }
+        return [
+            { id: 'h1', title: 'GitHub', url: 'https://github.com' },
+            { id: 'h2', title: 'Google', url: 'https://google.com' },
+            { id: 'h3', title: 'YouTube', url: 'https://youtube.com' }
+        ] as chrome.history.HistoryItem[];
     },
     /**
      * Fetches custom bookmark metadata from Chrome's sync storage.

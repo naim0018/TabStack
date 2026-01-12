@@ -3,6 +3,7 @@ import { FileText, Edit2, Trash2, Download } from "lucide-react";
 
 interface NoteCardProps {
   item: any;
+  onClick?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
   onDragStart?: (e: React.DragEvent) => void;
@@ -11,6 +12,7 @@ interface NoteCardProps {
 
 export function NoteCard({
   item,
+  onClick,
   onEdit,
   onDelete,
   onDragStart,
@@ -19,6 +21,7 @@ export function NoteCard({
   if (viewMode === "list") {
     return (
       <div
+        onClick={onClick}
         onDragStart={onDragStart}
         draggable={item.id !== undefined}
         className="group relative flex items-center gap-3 p-2.5 rounded-lg border border-transparent hover:bg-bg-card hover:border-border-card transition-all cursor-pointer"
@@ -77,6 +80,7 @@ export function NoteCard({
   }
   return (
     <div
+      onClick={onClick}
       onDragStart={onDragStart}
       draggable={item.id !== undefined}
       className="w-full glass group relative p-4 rounded-2xl border transition-all duration-300 backdrop-blur-md overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5 bg-bg-card border-border-card hover:border-accent min-h-[160px]"

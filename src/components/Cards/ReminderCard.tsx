@@ -4,6 +4,7 @@ import { Bell, Clock, Edit2, Trash2, Copy, Check } from "lucide-react";
 interface ReminderCardProps {
   item: any;
   now: number;
+  onClick?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
   onDragStart?: (e: React.DragEvent) => void;
@@ -13,6 +14,7 @@ interface ReminderCardProps {
 export function ReminderCard({
   item,
   now,
+  onClick,
   onEdit,
   onDelete,
   onDragStart,
@@ -30,7 +32,9 @@ export function ReminderCard({
   };
 
   const handleCardClick = () => {
-    if (item.url && item.url !== "about:blank") {
+    if (onClick) {
+      onClick();
+    } else if (item.url && item.url !== "about:blank") {
       window.location.href = item.url;
     }
   };
@@ -72,11 +76,18 @@ export function ReminderCard({
           <div className="text-[13px] text-text-primary truncate group-hover:text-accent transition-colors">
             {item.title || "Untitled"}
           </div>
-          {item.description && (
-            <div className="text-[10px] text-text-secondary truncate opacity-60">
-              {item.description}
-            </div>
-          )}
+          <div className="flex items-center gap-2 mt-0.5">
+            {item.deadline && (
+              <span className={`text-[10px] font-bold ${isPast || isUrgent ? "text-danger" : "text-accent"}`}>
+                {new Date(item.deadline).toLocaleDateString([], { month: 'short', day: 'numeric' })} {new Date(item.deadline).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+              </span>
+            )}
+            {item.description && (
+              <div className="text-[10px] text-text-secondary truncate opacity-60">
+                {item.description}
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {item.url && item.url !== "about:blank" && (
@@ -156,19 +167,23 @@ export function ReminderCard({
                 </span>
               </div>
               {countdownText && (
-                <div className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border transition-all ${
+                <div className={`px-3 py-1 rounded-lg text-sm font-mono font-bold border transition-all ${
                   isPast || isUrgent ? "text-danger border-danger/30 bg-danger/10 animate-pulse" : "text-accent border-accent/30 bg-accent/10"
                 }`}>
                   {countdownText}
                 </div>
               )}
             </div>
-            <div className={`text-[12px] font-bold flex items-center gap-2 ${
+            <div className={`text-sm font-bold flex items-center gap-2 ${
               isPast || isUrgent ? "text-danger/90" : "text-text-primary/80"
             }`}>
-              {new Date(item.deadline).toLocaleString([], {
+              {new Date(item.deadline).toLocaleDateString([], {
                 month: "short",
                 day: "numeric",
+                year: "numeric",
+              })}
+              <span className="opacity-40 select-none">|</span>
+              {new Date(item.deadline).toLocaleTimeString([], {
                 hour: "numeric",
                 minute: "2-digit",
                 hour12: true,
