@@ -22,6 +22,7 @@ interface SidebarProps {
   onEditBoard?: (id: string, name: string) => void;
   onDeleteBoard?: (id: string) => void;
   onSearch?: (query: string) => void;
+  tabStackFolderId?: string;
   hasBackground?: boolean;
 }
 
@@ -48,6 +49,7 @@ export function Sidebar({
   onEditBoard,
   onDeleteBoard,
   onSearch,
+  tabStackFolderId,
   hasBackground,
 }: SidebarProps) {
   return (
@@ -113,6 +115,23 @@ export function Sidebar({
           >
             <LayoutDashboard size={18} className="flex-shrink-0" />
             {!collapsed && <span className="text-gray-200 hover:text-gray-100 transition-colors">Dashboard</span>}
+          </button>
+
+          <button
+            onClick={() => onSelectBoard('1')}
+            className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-all w-full
+              ${collapsed ? 'justify-center p-2.5' : ''}
+              ${
+                activeSidebarItem === 'bookmarks' && activeBoardId === '1'
+                  ? 'bg-border-card text-gray-200 shadow-sm'
+                  : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
+              }
+            `}
+            title="Bookmarks"
+          >
+            <Folder size={18} className="flex-shrink-0" />
+            {!collapsed && <span className="text-gray-200 hover:text-gray-100 transition-colors">Bookmarks</span>}
           </button>
           
           {/* <div className={`text-[10px] uppercase font-bold text-text-secondary/60 mb-2 px-3 mt-4 tracking-widest ${!collapsed ? '' : 'hidden'}`}>Library</div> */}

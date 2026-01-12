@@ -955,6 +955,7 @@ const App = () => {
           }}
           onDeleteBoard={(id) => deleteItem(id, true)}
           onSearch={setSearchQuery}
+          tabStackFolderId={tabStackFolderId || undefined}
         />
         <main
           className={`flex-1 flex flex-col min-w-0 relative ${

@@ -62,7 +62,7 @@ export function TabCard({
       onClick={onClick}
       onDragStart={onDragStart}
       draggable={item.id !== undefined}
-      className="w-full glass group relative p-3.5 rounded-2xl border transition-all duration-300 backdrop-blur-md overflow-hidden min-h-[64px] hover:border-accent/40 hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5 bg-bg-card/50"
+      className="w-[200px] glass group relative p-3.5 rounded-2xl border transition-all duration-300 backdrop-blur-md overflow-hidden min-h-[64px] hover:border-accent/40 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-accent/5 bg-bg-card/50"
     >
       <div className="flex items-start gap-3 w-full relative z-10">
         <div className="w-9 h-9 border border-border-card rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 bg-border-card/20 text-text-secondary">

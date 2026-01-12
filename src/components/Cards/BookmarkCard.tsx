@@ -97,7 +97,7 @@ export function BookmarkCard({
       onClick={onClick}
       onDragStart={onDragStart}
       draggable={item.id !== undefined}
-      className="w-full h-auto glass group relative p-3.5 rounded-2xl border transition-all duration-300 backdrop-blur-md overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5 bg-bg-card border-border-card hover:border-accent"
+      className="w-[200px] h-auto glass group relative p-3.5 rounded-2xl border transition-all duration-300 backdrop-blur-md overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5 bg-bg-card border-border-card hover:border-accent group"
     >
       <div className="flex items-start gap-3 w-full relative z-10">
         <div className="w-9 h-9 border border-border-card rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 bg-border-card/20 text-text-secondary">
@@ -133,7 +133,7 @@ export function BookmarkCard({
       </div>
 
       {(item.dateAdded || item.description) && (
-        <div className="mt-3 flex flex-col gap-2 w-full relative z-10">
+        <div className="mt-3 flex-col gap-2 w-full relative z-10 hidden group-hover:flex">
           {item.description && (
             <p className="text-[11px] text-text-secondary/80 leading-relaxed px-1 line-clamp-2">
               {item.description}
@@ -152,20 +152,28 @@ export function BookmarkCard({
           <button
             onClick={handleCopy}
             className={`w-7 h-7 flex items-center justify-center rounded-lg bg-bg-card border transition-all shadow-sm ${
-              copied ? "text-accent border-accent" : "border-border-card text-text-secondary hover:bg-accent hover:border-accent hover:text-white"
+              copied
+                ? "text-accent border-accent"
+                : "border-border-card text-text-secondary hover:bg-accent hover:border-accent hover:text-white"
             }`}
           >
             {copied ? <Check size={12} /> : <Copy size={12} />}
           </button>
         )}
         <button
-          onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit?.();
+          }}
           className="w-7 h-7 flex items-center justify-center rounded-lg bg-bg-card border border-border-card text-text-secondary hover:bg-accent hover:border-accent hover:text-white transition-all shadow-sm"
         >
           <Edit2 size={12} />
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete?.();
+          }}
           className="w-7 h-7 flex items-center justify-center rounded-lg bg-bg-card border border-border-card text-text-secondary hover:bg-danger hover:border-danger hover:text-white transition-all shadow-sm"
         >
           <Trash2 size={12} />
