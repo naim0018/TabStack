@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Download } from 'lucide-react';
 import { Card } from '../components/Card';
 
 interface NotesViewProps {
@@ -31,12 +31,30 @@ export function NotesView({
         <h2 className="text-2xl font-black text-text-primary tracking-tight">
           My Notes
         </h2>
-        <button
-          onClick={onCreate}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-white text-sm font-bold hover:shadow-lg hover:shadow-accent/20 transition-all"
-        >
-          <Plus size={16} /> New Note
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const content = notes.map(n => `--- ${n.title} ---\n${n.description || ""}\n\n`).join("\n");
+              const blob = new Blob([content], { type: "text/plain" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `TabStack-Notes-All-${new Date().toISOString().split("T")[0]}.txt`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-bg-card border border-border-card text-text-secondary text-sm font-bold hover:bg-border-card transition-all"
+            title="Download all notes as a single .txt file"
+          >
+            <Download size={16} /> Download All
+          </button>
+          <button
+            onClick={onCreate}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent text-white text-sm font-bold hover:shadow-lg hover:shadow-accent/20 transition-all"
+          >
+            <Plus size={16} /> New Note
+          </button>
+        </div>
       </div>
 
       {filtered.length > 0 ? (

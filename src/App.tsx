@@ -58,6 +58,24 @@ const decodeMetaFromUrl = (url: string) => {
     return {};
   }
 };
+/**
+ * getCleanUrlFromUrl
+ * Removes TabStack internal metadata from the URL for display in edit fields.
+ * @param url The bookmark URL
+ */
+const getCleanUrlFromUrl = (url: string | undefined): string => {
+  try {
+    if (!url) return "";
+    if (!url.includes("#")) return url;
+    const [base, hash] = url.split("#");
+    const params = new URLSearchParams(hash);
+    params.delete("tsmeta");
+    const newHash = params.toString();
+    return newHash ? `${base}#${newHash}` : base;
+  } catch (e) {
+    return url || "";
+  }
+};
 // --------------------
 
 const App = () => {
@@ -137,19 +155,26 @@ const App = () => {
         title: string,
         parentId?: string
       ): any => {
+        let bestMatch = null;
         for (let n of nodes) {
           if (
             n.title === title &&
             !n.url &&
             (!parentId || n.parentId === String(parentId))
-          )
-            return n;
+          ) {
+            // Favor folders that have children
+            if (n.children && n.children.length > 0) return n;
+            if (!bestMatch) bestMatch = n;
+          }
           if (n.children) {
             const f = findFolder(n.children, title, parentId);
-            if (f) return f;
+            if (f) {
+               if (f.children && f.children.length > 0) return f;
+               if (!bestMatch) bestMatch = f;
+            }
           }
         }
-        return null;
+        return bestMatch;
       };
 
       const rootNodes = tr[0]?.children || [];
@@ -235,8 +260,13 @@ const App = () => {
       }
       setRemindersFolderId(remFolderNode.id);
 
-      // 4. Find or Create QuickLinks outside TabStack
+      // 4. Find or Create QuickLinks
       let qlFolderNode = findFolder(tr, "QuickLinks", "1");
+      if (!qlFolderNode) {
+        // Fallback: search globally if not found in Bookmarks Bar
+        qlFolderNode = findFolder(tr, "QuickLinks");
+      }
+
       if (!qlFolderNode) {
         isMoving.current = true;
         qlFolderNode = await chromeApi.createBookmark({
@@ -244,6 +274,9 @@ const App = () => {
           title: "QuickLinks",
         });
         isMoving.current = false;
+        // Refresh tree again to ensure we have the newly created node with its children
+        const updatedTree = await chromeApi.getTree();
+        setTree(updatedTree);
       }
       setQuickLinksFolderId(qlFolderNode.id);
 
@@ -300,8 +333,14 @@ const App = () => {
 
         const mergedBoards = [...settings.boards];
         discoveredBoards.forEach((d: any) => {
-          if (!mergedBoards.find((b) => b.id === d.id)) {
+          const existing = mergedBoards.find(
+            (b) => b.id === d.id || b.name === d.name
+          );
+          if (!existing) {
             mergedBoards.push(d);
+          } else if (existing.id !== d.id) {
+            // Update to local ID if name matches but ID differs (Sync Fix)
+            existing.id = d.id;
           }
         });
 
@@ -309,9 +348,10 @@ const App = () => {
         const validBoards = mergedBoards.filter((b) => {
           if (b.id === notesFolderNode.id || b.id === remFolderNode.id)
             return false;
+          
           const findInTree = (nodes: any[]): any => {
             for (let n of nodes) {
-              if (n.id === b.id) return n;
+              if (n.id === b.id || (n.title === b.name && !n.url)) return n;
               if (n.children) {
                 const f = findInTree(n.children);
                 if (f) return f;
@@ -319,7 +359,11 @@ const App = () => {
             }
             return null;
           };
-          return findInTree(tr);
+          const node = findInTree(tr);
+          if (node && node.id !== b.id) {
+            b.id = node.id; // Corrected ID in place
+          }
+          return !!node;
         });
 
         if (JSON.stringify(validBoards) !== JSON.stringify(settings.boards)) {
@@ -590,6 +634,96 @@ const App = () => {
           }));
         }
         refreshData();
+      },
+    });
+  };
+
+  const handleExportData = async () => {
+    try {
+      const data = {
+        version: "1.0",
+        settings,
+        metadata,
+        exportedAt: new Date().toISOString(),
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tabstack-backup-${
+        new Date().toISOString().split("T")[0]
+      }.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Export failed", e);
+      alert("Export failed. Check console for details.");
+    }
+  };
+
+  const handleImportData = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const imported = JSON.parse(event.target?.result as string);
+          if (imported.settings) {
+            setSettings((s) => ({ ...s, ...imported.settings }));
+          }
+          if (imported.metadata) {
+            const merged = { ...metadata, ...imported.metadata };
+            await chromeApi.saveMetadata(merged);
+            setMetadata(merged);
+          }
+          alert("Data imported successfully! Settings and metadata restored.");
+          refreshData();
+        } catch (err) {
+          console.error("Import failed", err);
+          alert("Invalid backup file.");
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  const handleForceSync = async () => {
+    setConfirmState({
+      isOpen: true,
+      title: "Force Metadata Repair",
+      message:
+        "This will scan all your TabStack bookmarks and re-encode their special descriptions/notes directly into their URLs. This is the most reliable way to force Chrome to sync your data to other computers. Proceed?",
+      onConfirm: async () => {
+        try {
+          let count = 0;
+          const process = async (nodes: any[]) => {
+            for (const n of nodes) {
+              if (n.url) {
+                const meta = metadata[n.id] || decodeMetaFromUrl(n.url);
+                if (Object.keys(meta).length > 0) {
+                  const newUrl = encodeMetaToUrl(n.url, meta);
+                  if (newUrl !== n.url) {
+                    await chromeApi.updateBookmark(n.id, { url: newUrl });
+                    count++;
+                  }
+                }
+              }
+              if (n.children) await process(n.children);
+            }
+          };
+          await process(tree);
+          alert(`Success! Re-encoded ${count} items for sync.`);
+          refreshData();
+        } catch (e) {
+          console.error("Force sync failed", e);
+        }
       },
     });
   };
@@ -870,7 +1004,11 @@ const App = () => {
                           setIsModalOpen(true);
                         }}
                         onEditReminder={(r) => {
-                          setModalInitialData(r);
+                          setModalInitialData({
+                            ...r,
+                            url: getCleanUrlFromUrl(r.url),
+                            type: "reminder",
+                          });
                           setModalForceType("reminder");
                           setIsModalOpen(true);
                         }}
@@ -888,6 +1026,7 @@ const App = () => {
                         onEditQuickLink={(link) => {
                           setModalInitialData({
                             ...link,
+                            url: getCleanUrlFromUrl(link.url),
                             type: "quicklink" as any,
                           });
                           setModalForceType("bookmark");
@@ -911,7 +1050,11 @@ const App = () => {
                           setIsModalOpen(true);
                         }}
                         onEdit={(n) => {
-                          setModalInitialData({ ...n, type: "note" });
+                          setModalInitialData({ 
+                            ...n, 
+                            url: getCleanUrlFromUrl(n.url),
+                            type: "note" 
+                          });
                           setModalForceType("note");
                           setIsModalOpen(true);
                         }}
@@ -928,7 +1071,11 @@ const App = () => {
                           setIsModalOpen(true);
                         }}
                         onEdit={(r) => {
-                          setModalInitialData({ ...r, type: "reminder" });
+                          setModalInitialData({ 
+                            ...r, 
+                            url: getCleanUrlFromUrl(r.url),
+                            type: "reminder" 
+                          });
                           setModalForceType("reminder");
                           setIsModalOpen(true);
                         }}
@@ -938,6 +1085,9 @@ const App = () => {
                       <CustomizeSettings
                         settings={settings}
                         setSettings={setSettings}
+                        onExportData={handleExportData}
+                        onImportData={handleImportData}
+                        onForceSync={handleForceSync}
                       />
                     ) : settings.activeSidebarItem === "bookmarks" ? (
                       <BookmarksView
@@ -954,7 +1104,10 @@ const App = () => {
                         onItemClick={handleCardClick}
                         onItemEdit={(item: any) => {
                           setModalForceType(null);
-                          setModalInitialData(item);
+                          setModalInitialData({
+                            ...item,
+                            url: getCleanUrlFromUrl(item.url)
+                          });
                           setIsModalOpen(true);
                         }}
                         onItemDelete={(item: any) => deleteItem(item.id)}
@@ -1004,7 +1157,11 @@ const App = () => {
                         topSites={topSites}
                         onEditReminder={(r) => {
                           setModalForceType(null);
-                          setModalInitialData(r);
+                          setModalInitialData({
+                            ...r,
+                            url: getCleanUrlFromUrl(r.url),
+                            type: "reminder",
+                          });
                           setIsModalOpen(true);
                         }}
                         onDeleteReminder={(id) => deleteItem(id)}
@@ -1026,6 +1183,7 @@ const App = () => {
                         onEditQuickLink={(link) => {
                           setModalInitialData({
                             ...link,
+                            url: getCleanUrlFromUrl(link.url),
                             type: "quicklink" as any,
                           });
                           setModalForceType("bookmark");
@@ -1137,6 +1295,7 @@ const App = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveEdit}
+        initialData={modalInitialData}
         forceType={modalForceType}
       />
 

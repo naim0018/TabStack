@@ -29,7 +29,14 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
-        setFormData(initialData);
+        setFormData({
+          id: initialData.id,
+          title: initialData.title || '',
+          url: initialData.url || '',
+          type: initialData.type || forceType || 'bookmark',
+          description: initialData.description || '',
+          deadline: initialData.deadline || '',
+        });
       } else {
         setFormData({
           title: '',

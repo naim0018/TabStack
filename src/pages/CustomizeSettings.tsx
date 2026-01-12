@@ -5,6 +5,9 @@ import { Settings } from '../types';
 interface CustomizeSettingsProps {
   settings: Settings;
   setSettings: React.Dispatch<React.SetStateAction<Settings>>;
+  onExportData: () => void;
+  onImportData: () => void;
+  onForceSync: () => void;
 }
 
 // Predefined beautiful background images
@@ -43,7 +46,13 @@ const PRESET_BACKGROUNDS = [
   },
 ];
 
-export function CustomizeSettings({ settings, setSettings }: CustomizeSettingsProps) {
+export function CustomizeSettings({ 
+  settings, 
+  setSettings, 
+  onExportData, 
+  onImportData,
+  onForceSync
+}: CustomizeSettingsProps) {
   const [customUrl, setCustomUrl] = useState('');
   const [isAddingCustom, setIsAddingCustom] = useState(false);
 
@@ -95,6 +104,8 @@ export function CustomizeSettings({ settings, setSettings }: CustomizeSettingsPr
     setSettings((s) => ({ ...s, textColor: value }));
   };
 
+  const syncStatus = "Connected"; // Visual placeholder
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
       {/* Header */}
@@ -108,81 +119,63 @@ export function CustomizeSettings({ settings, setSettings }: CustomizeSettingsPr
         </p>
       </div>
 
-      {/* Interface Settings */}
-      <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-8">
-        <div className="flex items-center gap-2 mb-4">
-            <Sliders size={20} className="text-accent" />
-            <h3 className="text-lg font-bold text-text-primary">Interface Adjustments</h3>
-        </div>
-
-        {/* Card Opacity Slider */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-text-secondary">
-              Card Background Opacity
-            </label>
-            <span className="text-sm font-bold text-accent">
-              {settings.cardOpacity ?? 60}%
-            </span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={settings.cardOpacity ?? 60}
-            onChange={(e) => handleCardOpacityChange(Number(e.target.value))}
-            className="w-full h-2 bg-border-card rounded-full appearance-none cursor-pointer accent-accent"
-          />
-        </div>
-
-        {/* Separator */}
-        <div className="h-px bg-border-card/50"></div>
-
-        {/* Text Brightness Slider */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-text-secondary">
-              Text Brightness
-            </label>
-            <span className="text-sm font-bold text-accent">
-              {settings.textBrightness ?? 100}%
-            </span>
-          </div>
-          <input
-            type="range"
-            min="50"
-            max="150"
-            step="5"
-            value={settings.textBrightness ?? 100}
-            onChange={(e) => handleTextBrightnessChange(Number(e.target.value))}
-            className="w-full h-2 bg-border-card rounded-full appearance-none cursor-pointer accent-accent"
-          />
-        </div>
-
-         {/* Text Color Picker */}
-         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-text-secondary flex items-center gap-2">
-                <Type size={16} />
-                Text Color Override
-            </label>
-            <div className="flex items-center gap-3">
-                <button
-                    onClick={() => handleTextColorChange("")}
-                    className={`text-xs font-bold px-2 py-1 rounded border ${!settings.textColor ? 'bg-accent/10 text-accent border-accent' : 'border-border-card text-text-secondary hover:bg-border-card'}`}
-                >
-                    Default
-                </button>
-                <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-border-card shadow-sm cursor-pointer">
-                    <input
-                        type="color"
-                        value={settings.textColor || "#e2e8f0"}
-                        onChange={(e) => handleTextColorChange(e.target.value)}
-                        className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] cursor-pointer p-0 border-0"
-                    />
-                </div>
+      {/* Sync & Backup Section */}
+      <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <RefreshCw size={24} className="text-accent animate-spin-slow" />
+            <div>
+              <h3 className="text-xl font-bold text-text-primary">Sync & Backup</h3>
+              <p className="text-sm text-text-secondary font-medium">Export or import your data manually if sync is slow</p>
             </div>
           </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-bold border border-emerald-500/20">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Chrome Sync Ready
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Export */}
+          <button
+            onClick={onExportData}
+            className="flex items-center gap-4 p-5 rounded-2xl bg-bg-card border border-border-card hover:border-accent hover:bg-accent/5 transition-all text-left group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Upload size={24} className="text-accent rotate-180" />
+            </div>
+            <div>
+              <div className="font-bold text-text-primary group-hover:text-accent transition-colors">Export All Data</div>
+              <div className="text-xs text-text-secondary font-medium mt-0.5">Save settings, notes & reminders as a file</div>
+            </div>
+          </button>
+
+          {/* Import */}
+          <button
+            onClick={onImportData}
+            className="flex items-center gap-4 p-5 rounded-2xl bg-bg-card border border-border-card hover:border-accent hover:bg-accent/5 transition-all text-left group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Upload size={24} className="text-accent" />
+            </div>
+            <div>
+              <div className="font-bold text-text-primary group-hover:text-accent transition-colors">Import Data</div>
+              <div className="text-xs text-text-secondary font-medium mt-0.5">Restore data from a backup file</div>
+            </div>
+          </button>
+        </div>
+
+        <div className="pt-2">
+            <button
+                onClick={onForceSync}
+                className="w-full py-4 rounded-xl border-2 border-dashed border-border-card hover:border-accent/40 hover:bg-accent/5 flex items-center justify-center gap-3 transition-all group"
+            >
+                <RefreshCw size={18} className="text-text-secondary group-hover:text-accent group-hover:rotate-180 transition-all duration-700" />
+                <span className="text-sm font-bold text-text-secondary group-hover:text-accent">Force Metadata Repair & Push to Sync</span>
+            </button>
+            <p className="text-[10px] text-text-secondary text-center mt-3 font-medium opacity-60">
+                Tip: If your notes aren't appearing on another PC, click "Force Metadata Repair" to re-encode all data into your bookmarks.
+            </p>
         </div>
       </div>
 

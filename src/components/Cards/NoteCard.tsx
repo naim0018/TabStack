@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, Edit2, Trash2 } from "lucide-react";
+import { FileText, Edit2, Trash2, Download } from "lucide-react";
 
 interface NoteCardProps {
   item: any;
@@ -37,6 +37,22 @@ export function NoteCard({
           )}
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const blob = new Blob([item.description || ""], { type: "text/plain" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${item.title || "Note"}.txt`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="p-1 hover:text-accent text-text-secondary transition-colors"
+            title="Download as .txt"
+          >
+            <Download size={12} />
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -95,6 +111,22 @@ export function NoteCard({
       </div>
 
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0 z-20">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            const blob = new Blob([item.description || ""], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${item.title || "Note"}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+          className="w-7 h-7 flex items-center justify-center rounded-lg bg-bg-card border border-border-card text-text-secondary hover:bg-accent hover:border-accent hover:text-white transition-all shadow-sm"
+          title="Download as .txt"
+        >
+          <Download size={12} />
+        </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
