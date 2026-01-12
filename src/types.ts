@@ -13,8 +13,11 @@ export interface Settings {
   backgroundOpacity?: number;
   backgroundBlur?: number;
   cardOpacity?: number;
+  cardBlur?: number;
   textBrightness?: number;
   textColor?: string;
+  backgroundColor?: string;
+  cardBackgroundColor?: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -31,8 +34,11 @@ export const DEFAULT_SETTINGS: Settings = {
   backgroundOpacity: 50,
   backgroundBlur: 0,
   cardOpacity: 60,
+  cardBlur: 16,
   textBrightness: 100,
   textColor: "#e2e8f0", // Default text-primary
+  backgroundColor: "#1a1c23", // Default bg-color
+  cardBackgroundColor: "#1e293b", // Default color for cards (slate-800)
 };
 
 export interface BookmarkItem {

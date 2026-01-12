@@ -932,6 +932,9 @@ const App = () => {
           {
             "--glass-opacity": (settings.cardOpacity ?? 60) / 100,
             "--text-primary": settings.textColor || undefined,
+            "--bg-color": settings.backgroundColor || undefined,
+            "--card-bg-color": settings.cardBackgroundColor || undefined,
+            "--card-blur": `${settings.cardBlur ?? 16}px`,
             "--app-brightness": (settings.textBrightness ?? 100) / 100,
             filter: "brightness(var(--app-brightness))",
           } as React.CSSProperties

@@ -104,6 +104,18 @@ export function CustomizeSettings({
     setSettings((s) => ({ ...s, textColor: value }));
   };
 
+  const handleBackgroundColorChange = (value: string) => {
+    setSettings((s) => ({ ...s, backgroundColor: value }));
+  };
+
+  const handleCardBlurChange = (value: number) => {
+    setSettings((s) => ({ ...s, cardBlur: value }));
+  };
+
+  const handleCardBackgroundColorChange = (value: string) => {
+    setSettings((s) => ({ ...s, cardBackgroundColor: value }));
+  };
+
   const syncStatus = "Connected"; // Visual placeholder
 
   return (
@@ -209,48 +221,209 @@ export function CustomizeSettings({
         </div>
       )}
 
-      {/* Background Opacity & Blur Controls */}
+      {/* Wallpaper Adjustments */}
       <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-6">
-        <h3 className="text-lg font-bold text-text-primary">Wallpaper Adjustments</h3>
+        <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+            <Palette size={20} className="text-accent" />
+            Background Adjustments
+        </h3>
         
-        {/* Opacity Slider */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-text-secondary">
-              Wallpaper Visibility (Opacity)
-            </label>
-            <span className="text-sm font-bold text-accent">
-              {settings.backgroundOpacity || 50}%
-            </span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={settings.backgroundOpacity || 50}
-            onChange={(e) => handleOpacityChange(Number(e.target.value))}
-            className="w-full h-2 bg-border-card rounded-full appearance-none cursor-pointer accent-accent"
-          />
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Opacity Slider */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-text-secondary">
+                  Wallpaper Visibility (Opacity)
+                </label>
+                <span className="text-sm font-bold text-accent">
+                  {settings.backgroundOpacity || 50}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={settings.backgroundOpacity || 50}
+                onChange={(e) => handleOpacityChange(Number(e.target.value))}
+                className="w-full h-2 bg-border-card rounded-full appearance-none cursor-pointer accent-accent"
+              />
+            </div>
 
-        {/* Blur Slider */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-text-secondary">
-              Wallpaper Blur
-            </label>
-            <span className="text-sm font-bold text-accent">
-              {settings.backgroundBlur || 0}px
-            </span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="20"
-            value={settings.backgroundBlur || 0}
-            onChange={(e) => handleBlurChange(Number(e.target.value))}
-            className="w-full h-2 bg-border-card rounded-full appearance-none cursor-pointer accent-accent"
-          />
+            {/* Blur Slider */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-text-secondary">
+                  Wallpaper Blur
+                </label>
+                <span className="text-sm font-bold text-accent">
+                  {settings.backgroundBlur || 0}px
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="20"
+                value={settings.backgroundBlur || 0}
+                onChange={(e) => handleBlurChange(Number(e.target.value))}
+                className="w-full h-2 bg-border-card rounded-full appearance-none cursor-pointer accent-accent"
+              />
+            </div>
+        </div>
+      </div>
+
+      {/* Interface Adjustments */}
+      <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-6">
+        <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+            <Sliders size={20} className="text-accent" />
+            Card Appearance
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Card Opacity */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-text-secondary">
+                  Card Background Opacity
+                </label>
+                <span className="text-sm font-bold text-accent">
+                  {settings.cardOpacity || 60}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="100"
+                value={settings.cardOpacity || 60}
+                onChange={(e) => handleCardOpacityChange(Number(e.target.value))}
+                className="w-full h-2 bg-border-card rounded-full appearance-none cursor-pointer accent-accent"
+              />
+              <p className="text-[10px] text-text-secondary font-medium">Controls the transparency of all cards and panels</p>
+            </div>
+
+            {/* Card Blur */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-text-secondary">
+                  Card Background Blur
+                </label>
+                <span className="text-sm font-bold text-accent">
+                  {settings.cardBlur ?? 16}px
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="40"
+                value={settings.cardBlur ?? 16}
+                onChange={(e) => handleCardBlurChange(Number(e.target.value))}
+                className="w-full h-2 bg-border-card rounded-full appearance-none cursor-pointer accent-accent"
+              />
+              <p className="text-[10px] text-text-secondary font-medium">Controls the frosted glass intensity</p>
+            </div>
+
+            {/* Card Background Color */}
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-text-secondary block">
+                Card Accent Color
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="color"
+                  value={settings.cardBackgroundColor || '#1e293b'}
+                  onChange={(e) => handleCardBackgroundColorChange(e.target.value)}
+                  className="w-12 h-12 rounded-lg bg-bg-card border border-border-card cursor-pointer"
+                />
+                <div className="flex flex-col">
+                    <span className="text-xs font-mono font-bold text-text-primary uppercase">{settings.cardBackgroundColor || '#1e293b'}</span>
+                    <button 
+                        onClick={() => handleCardBackgroundColorChange('#1e293b')}
+                        className="text-[10px] text-accent font-bold hover:underline text-left mt-1"
+                    >
+                        Reset
+                    </button>
+                </div>
+              </div>
+              <p className="text-[10px] text-text-secondary font-medium">Base color for cards (combined with opacity)</p>
+            </div>
+        </div>
+      </div>
+
+      {/* Typography & Colors */}
+      <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-6">
+        <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+            <Type size={20} className="text-accent" />
+            Typography & Colors
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Text Brightness */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-text-secondary">
+                  General Text Brightness
+                </label>
+                <span className="text-sm font-bold text-accent">
+                  {settings.textBrightness || 100}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="50"
+                max="150"
+                value={settings.textBrightness || 100}
+                onChange={(e) => handleTextBrightnessChange(Number(e.target.value))}
+                className="w-full h-2 bg-border-card rounded-full appearance-none cursor-pointer accent-accent"
+              />
+              <p className="text-[10px] text-text-secondary font-medium">Adjust how bright the text appears on screen</p>
+            </div>
+
+            {/* Text Color */}
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-text-secondary block">
+                Primary Text Color
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="color"
+                  value={settings.textColor || '#e2e8f0'}
+                  onChange={(e) => handleTextColorChange(e.target.value)}
+                  className="w-12 h-12 rounded-lg bg-bg-card border border-border-card cursor-pointer"
+                />
+                <div className="flex flex-col">
+                    <span className="text-xs font-mono font-bold text-text-primary uppercase">{settings.textColor || '#e2e8f0'}</span>
+                    <button 
+                        onClick={() => handleTextColorChange('#e2e8f0')}
+                        className="text-[10px] text-accent font-bold hover:underline text-left mt-1"
+                    >
+                        Reset
+                    </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Background Color */}
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-text-secondary block">
+                Main Background Color
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="color"
+                  value={settings.backgroundColor || '#1a1c23'}
+                  onChange={(e) => handleBackgroundColorChange(e.target.value)}
+                  className="w-12 h-12 rounded-lg bg-bg-card border border-border-card cursor-pointer"
+                />
+                <div className="flex flex-col">
+                    <span className="text-xs font-mono font-bold text-text-primary uppercase">{settings.backgroundColor || '#1a1c23'}</span>
+                    <button 
+                        onClick={() => handleBackgroundColorChange('#1a1c23')}
+                        className="text-[10px] text-accent font-bold hover:underline text-left mt-1"
+                    >
+                        Reset
+                    </button>
+                </div>
+              </div>
+            </div>
         </div>
       </div>
 

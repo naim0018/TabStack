@@ -22,12 +22,16 @@ body {
   :root {
     /* Soft Dark Mode (Default) */
     --bg-color: #1a1c23;
-    --sidebar-bg: #111318;
-    --card-bg: rgba(30, 41, 59, 0.4);
+    /* Reactive Card Appearance */
+    --main-card-bg: color-mix(in srgb, var(--card-bg-color, #1e293b) calc(var(--glass-opacity, 0.6) * 100%), transparent);
+    
+    --sidebar-bg: var(--main-card-bg);
+    --card-bg: var(--main-card-bg);
     --card-border: rgba(148, 163, 184, 0.08);
-    --header-bg: rgba(26, 28, 35, 0.85);
+    --header-bg: var(--main-card-bg);
     --text-primary: #e2e8f0;
     --text-secondary: #94a3b8;
+    --app-blur: var(--card-blur, 16px);
     --accent: #38bdf8;
     --accent-glow: rgba(56, 189, 248, 0.12);
     --danger: #f43f5e;
@@ -60,6 +64,12 @@ body {
     @apply bg-bg text-text-primary h-screen overflow-hidden transition-colors duration-300;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
+
+  /* Force global blur override for common utility classes */
+  .backdrop-blur-md, .backdrop-blur-2xl, .backdrop-blur-xl {
+    backdrop-filter: blur(var(--app-blur, 16px)) !important;
+    -webkit-backdrop-filter: blur(var(--app-blur, 16px)) !important;
+  }
 }
 
 @layer utilities {
@@ -73,9 +83,9 @@ body {
   
   /* Glassmorphism Effect */
   .glass {
-    background: var(--card-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background-color: var(--card-bg-color, var(--card-bg));
+    backdrop-filter: blur(var(--app-blur, 16px));
+    -webkit-backdrop-filter: blur(var(--app-blur, 16px));
     border: 1px solid var(--card-border);
     box-shadow: var(--shadow-md);
   }
@@ -104,7 +114,7 @@ body {
   }
 }
   [data-theme="dark"] .glass {
-    background-color: rgba(15, 23, 42, var(--glass-opacity, 0.6));
+    background-color: var(--main-card-bg);
     border-color: rgba(255, 255, 255, 0.1);
   }
 
