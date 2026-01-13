@@ -112,28 +112,39 @@ export const chromeApi = {
         console.log('Saved metadata:', metadata);
     },
     /**
+     * Helper to resolve local image placeholders in settings.
+     */
+    resolveLocalSettings: async (settings: any) => {
+        if (!settings || settings.backgroundImage !== 'LOCAL_UPLOAD') return settings;
+        return new Promise((resolve) => {
+            chrome.storage.local.get(['localBackgroundImage'], (localResult) => {
+                if (localResult.localBackgroundImage) {
+                    resolve({ ...settings, backgroundImage: localResult.localBackgroundImage });
+                } else {
+                    resolve(settings);
+                }
+            });
+        });
+    },
+    /**
      * Fetches extension settings from Chrome storage.
      * Uses sync storage for general settings and local storage for large assets like background images.
      */
     getSettings: async (defaultSettings: any): Promise<any> => {
         if (isExtension) {
             return new Promise((resolve) => {
-                chrome.storage.sync.get(['appSettings'], (syncResult) => {
+                chrome.storage.sync.get(['appSettings'], async (syncResult) => {
                     const settings = syncResult.appSettings || defaultSettings;
-                    
-                    // Check if there is a locally stored background image override
-                    chrome.storage.local.get(['localBackgroundImage'], (localResult) => {
-                        if (localResult.localBackgroundImage) {
-                            resolve({ ...settings, backgroundImage: localResult.localBackgroundImage });
-                        } else {
-                            resolve(settings);
-                        }
-                    });
+                    const resolved = await chromeApi.resolveLocalSettings(settings);
+                    console.log('TabStack: Loaded settings (Resolved LOCAL_UPLOAD if present)');
+                    resolve(resolved);
                 });
             });
         }
         const stored = localStorage.getItem('tabstack-settings');
-        return stored ? JSON.parse(stored) : defaultSettings;
+        const settings = stored ? JSON.parse(stored) : defaultSettings;
+        console.log('TabStack: Loaded settings from localStorage');
+        return settings;
     },
     /**
      * Saves extension settings.
@@ -142,25 +153,40 @@ export const chromeApi = {
      */
     saveSettings: async (settings: any) => {
         if (isExtension) {
-            const { backgroundImage, ...syncSettings } = settings;
-            const isLocalImage = backgroundImage && backgroundImage.startsWith('data:');
+            try {
+                const { backgroundImage, ...syncSettings } = settings;
+                
+                // If the image is a data URL (local upload), store it locally
+                if (backgroundImage && backgroundImage.startsWith('data:')) {
+                    await chrome.storage.local.set({ localBackgroundImage: backgroundImage });
+                    await chrome.storage.sync.set({ 
+                        appSettings: { ...syncSettings, backgroundImage: 'LOCAL_UPLOAD' } 
+                    });
+                    console.log('TabStack: Saved local image and synced settings');
+                    return;
+                } 
+                
+                // If it's the 'LOCAL_UPLOAD' placeholder, just save other settings to sync
+                if (backgroundImage === 'LOCAL_UPLOAD') {
+                    await chrome.storage.sync.set({ 
+                        appSettings: { ...syncSettings, backgroundImage: 'LOCAL_UPLOAD' } 
+                    });
+                    return;
+                }
 
-            if (isLocalImage) {
-                // Store large image locally and save placeholder in sync
-                await chrome.storage.local.set({ localBackgroundImage: backgroundImage });
-                return chrome.storage.sync.set({ 
-                    appSettings: { ...syncSettings, backgroundImage: 'LOCAL_UPLOAD' } 
-                });
-            } else {
-                // If it's a URL or empty, remove local override and save normally
+                // If it's a remote URL or empty, remove local override and save normally
                 await chrome.storage.local.remove('localBackgroundImage');
-                return chrome.storage.sync.set({ 
+                await chrome.storage.sync.set({ 
                     appSettings: { ...syncSettings, backgroundImage } 
                 });
+                console.log('TabStack: Saved settings with remote/no image');
+            } catch (err) {
+                console.error('TabStack: Settings save failed', err);
             }
+        } else {
+            localStorage.setItem('tabstack-settings', JSON.stringify(settings));
+            console.log('TabStack: Saved settings to localStorage (Dev Mode)');
         }
-        localStorage.setItem('tabstack-settings', JSON.stringify(settings));
-        console.log('Saved settings:', settings);
     },
     /**
      * Creates a new bookmark or folder using the Chrome API.

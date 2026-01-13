@@ -99,6 +99,7 @@ const App = () => {
   // ... logic ...
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
+  const isProcessingSync = React.useRef(false);
 
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
   const [tree, setTree] = useState<chrome.bookmarks.BookmarkTreeNode[]>([]);
@@ -457,10 +458,13 @@ const App = () => {
       chrome.bookmarks.onMoved.addListener(handler);
 
       // Listen for storage changes (sync across devices)
-      const storageHandler = (changes: any, area: string) => {
+      const storageHandler = async (changes: any, area: string) => {
         if (area === "sync") {
           if (changes.appSettings) {
-            setSettings(changes.appSettings.newValue);
+            isProcessingSync.current = true;
+            const resolved = await chromeApi.resolveLocalSettings(changes.appSettings.newValue);
+            setSettings(resolved);
+            setTimeout(() => { isProcessingSync.current = false; }, 200);
           }
           if (changes.bookmarkMetadata) {
             setMetadata(changes.bookmarkMetadata.newValue);
@@ -485,7 +489,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (isSettingsLoaded) {
+    if (isSettingsLoaded && !isProcessingSync.current) {
       chromeApi.saveSettings(settings);
     }
     document.body.setAttribute("data-theme", settings.theme);
@@ -979,16 +983,17 @@ const App = () => {
       }
     >
       {settings.backgroundImage && (
-        <div
-          className="absolute inset-0 z-0 pointer-events-none transition-all duration-500"
-          style={{
-            backgroundImage: `url(${settings.backgroundImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            opacity: (settings.backgroundOpacity || 50) / 100,
-            filter: `blur(${settings.backgroundBlur || 0}px)`,
-          }}
-        />
+        <div className="absolute inset-0 z-0 pointer-events-none transition-all duration-500 overflow-hidden">
+          <img
+            src={settings.backgroundImage}
+            className="w-full h-full object-cover"
+            style={{
+              opacity: (settings.backgroundOpacity || 50) / 100,
+              filter: `blur(${settings.backgroundBlur || 0}px)`,
+            }}
+            alt=""
+          />
+        </div>
       )}
 
       <div className="relative z-10 flex h-full w-full">
