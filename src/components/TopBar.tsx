@@ -106,7 +106,7 @@ interface TopBarProps {
                   size={20}
                   className="text-accent group-hover:scale-110 transition-transform"
                 />
-                <span className="text-[12px] text-gray-200 font-medium uppercase tracking-widest hidden sm:inline">
+                <span className="text-[12px] text-text-primary font-medium uppercase tracking-widest hidden sm:inline">
                   Add Bookmark
                 </span>
               </button>
@@ -120,7 +120,7 @@ interface TopBarProps {
                   size={20}
                   className="text-accent group-hover:scale-110 transition-transform"
                 />
-                <span className="text-[12px] text-gray-200 font-medium uppercase tracking-widest hidden sm:inline">
+                <span className="text-[12px] text-text-primary font-medium uppercase tracking-widest hidden sm:inline">
                   New Folder
                 </span>
               </button>
@@ -134,14 +134,14 @@ interface TopBarProps {
                   size={20}
                   className="text-accent group-hover:scale-110 transition-transform"
                 />
-                <span className="text-[12px] text-gray-200 font-medium uppercase tracking-widest hidden sm:inline">
+                <span className="text-[12px] text-text-primary font-medium uppercase tracking-widest hidden sm:inline">
                   Add Reminder
                 </span>
               </button>
             </div>
   
             {/* Vertical Divider */}
-            <div className="h-8 w-px bg-white/40 " />
+            <div className="h-8 w-px bg-border-card " />
   
             {/* View Mode Toggle (Grid vs Tabs) */}
             {/* <button

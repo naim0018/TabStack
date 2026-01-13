@@ -10,6 +10,7 @@ import { SpacesView } from "./pages/SpacesView";
 import { NotesView } from "./pages/NotesView";
 import { RemindersView } from "./pages/RemindersView";
 import { BookmarksView } from "./pages/BookmarksView";
+import { WatchlistView } from "./pages/WatchlistView";
 import { CustomizeSettings } from "./pages/CustomizeSettings";
 import { SectionList } from "./components/SectionList";
 import { Settings, DEFAULT_SETTINGS, BookmarkItem } from "./types";
@@ -116,6 +117,9 @@ const App = () => {
   const [quickLinksFolderId, setQuickLinksFolderId] = useState<string | null>(
     null
   );
+  const [watchlistFolderId, setWatchlistFolderId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -128,7 +132,7 @@ const App = () => {
     null
   );
   const [modalForceType, setModalForceType] = useState<
-    "bookmark" | "folder" | "reminder" | "note" | null
+    "bookmark" | "folder" | "reminder" | "note" | "watchlist" | null
   >(null);
 
   const [confirmState, setConfirmState] = useState<{
@@ -299,7 +303,29 @@ const App = () => {
       }
       setQuickLinksFolderId(qlFolderNode.id);
 
-      // 4. Migrate legacy boards from Root to Parent
+      // 5. Find or Create Watchlist inside Parent
+      let wlFolderNode = findFolder(
+        tsParent.children || [],
+        "Watchlist",
+        tsParent.id
+      );
+      if (!wlFolderNode) {
+        isMoving.current = true;
+        wlFolderNode = await chromeApi.createBookmark({
+          parentId: tsParent.id,
+          title: "Watchlist",
+        });
+        isMoving.current = false;
+        // Refresh tree again to ensure we have the newly created node with its children
+        const updatedTree = await chromeApi.getTree();
+        setTree(updatedTree);
+        tr[0] = updatedTree[0];
+        tsParent = findFolder(updatedTree, "TabStack");
+        wlFolderNode = findFolder(tsParent.children || [], "Watchlist", tsParent.id);
+      }
+      setWatchlistFolderId(wlFolderNode.id);
+
+      // 6. Migrate legacy boards from Root to Parent
       const legacyBoards = rootNodes.filter(
         (n) =>
           !n.url &&
@@ -318,7 +344,7 @@ const App = () => {
         isMoving.current = false;
       }
 
-      // 5. Move out-of-place items (Reminders and Notes)
+      // 7. Move out-of-place items (Reminders, Notes, Watchlist)
       if (!isMoving.current) {
         const outOfPlace: { id: string; targetId: string }[] = [];
         const findMisplaced = (nodes: any[]) => {
@@ -331,6 +357,12 @@ const App = () => {
               n.parentId !== notesFolderNode.id
             ) {
               outOfPlace.push({ id: n.id, targetId: notesFolderNode.id });
+            } else if (
+              enriched.type === "watchlist" &&
+              wlFolderNode &&
+              n.parentId !== wlFolderNode.id
+            ) {
+              outOfPlace.push({ id: n.id, targetId: wlFolderNode.id });
             }
             if (n.children) findMisplaced(n.children);
           }
@@ -346,7 +378,7 @@ const App = () => {
         }
       }
 
-      // 6. Discover boards inside TabStack parent
+      // 8. Discover boards inside TabStack parent
       if (tr.length > 0) {
         const tsChildren = tsParent.children || [];
         const discoveredBoards = tsChildren
@@ -354,7 +386,8 @@ const App = () => {
             (node: any) =>
               !node.url &&
               node.id !== notesFolderNode.id &&
-              node.id !== remFolderNode.id
+              node.id !== remFolderNode.id &&
+              node.id !== wlFolderNode.id
           )
           .map((node: any) => ({ id: node.id, name: node.title }));
 
@@ -373,7 +406,7 @@ const App = () => {
 
         // Validate existence
         const validBoards = mergedBoards.filter((b) => {
-          if (b.id === notesFolderNode.id || b.id === remFolderNode.id)
+          if (b.id === notesFolderNode.id || b.id === remFolderNode.id || b.id === wlFolderNode.id)
             return false;
           
           const findInTree = (nodes: any[]): any => {
@@ -401,7 +434,7 @@ const App = () => {
       console.error("Failed to refresh data", err);
     }
   };
- 
+
   useEffect(() => {
     const loadInitialSettings = async () => {
       const syncedSettings = await chromeApi.getSettings(DEFAULT_SETTINGS);
@@ -605,6 +638,24 @@ const App = () => {
     return folder.children.map((n: any) => enrichItem(n, metadata));
   }, [tree, quickLinksFolderId, metadata]);
 
+  const watchlistData = useMemo(() => {
+    if (!watchlistFolderId || !tree || tree.length === 0) return [];
+    const findFolder = (nodes: any[]): any => {
+      for (let n of nodes) {
+        if (n.id === watchlistFolderId) return n;
+        if (n.children) {
+          const f = findFolder(n.children);
+          if (f) return f;
+        }
+      }
+      return null;
+    };
+    const folder = findFolder(tree);
+    if (!folder || !folder.children) return [];
+
+    return folder.children.map((n: any) => enrichItem(n, metadata));
+  }, [tree, watchlistFolderId, metadata]);
+
   // Handlers
   const handleToggleSection = (id: string) => {
     setSettings((prev) => ({
@@ -743,7 +794,8 @@ const App = () => {
 
   const handleSaveEdit = async (data: EditData) => {
     const { id, title, url, type, description, deadline } = data;
-    const metaToSave = { description, deadline, type };
+    const effectiveType = (type === "bookmark" && settings.activeSidebarItem === "watchlist") ? "watchlist" : type;
+    const metaToSave = { description, deadline, type: effectiveType };
 
     try {
       let savedId = id;
@@ -755,6 +807,8 @@ const App = () => {
             ? remindersFolderId || "1"
             : type === "quicklink"
             ? quickLinksFolderId || "1"
+            : type === "watchlist" || settings.activeSidebarItem === "watchlist"
+            ? watchlistFolderId || "1"
             : settings.activeTab !== "tabs"
             ? settings.activeTab
             : settings.activeBoardId;
@@ -780,28 +834,24 @@ const App = () => {
         await chromeApi.updateBookmark(id, updateParams);
 
         // Check for relocation if type changed or it's misplaced
-        const targetParentId =
-          type === "note"
-            ? notesFolderId
-            : type === "reminder"
-            ? remindersFolderId
-            : null;
-
-        if (targetParentId) {
-          // We need current node to check parent
-          const findNode = (nodes: any[]): any => {
-            for (let n of nodes) {
-              if (n.id === id) return n;
-              if (n.children) {
-                const f = findNode(n.children);
-                if (f) return f;
-              }
+        const findNodeInTree = (nodes: any[]): any => {
+          for (let n of nodes) {
+            if (n.id === id) return n;
+            if (n.children) {
+              const f = findNodeInTree(n.children);
+              if (f) return f;
             }
-            return null;
-          };
-          const node = findNode(tree);
-          if (node && node.parentId !== targetParentId) {
-            await chromeApi.moveBookmark(id, { parentId: targetParentId });
+          }
+          return null;
+        };
+        const node = findNodeInTree(tree);
+        if (node) {
+          if (type === "note" && node.parentId !== notesFolderId) {
+            await chromeApi.moveBookmark(id, { parentId: notesFolderId! });
+          } else if (type === "reminder" && node.parentId !== remindersFolderId) {
+            await chromeApi.moveBookmark(id, { parentId: remindersFolderId! });
+          } else if (type === "watchlist" && node.parentId !== watchlistFolderId) {
+            await chromeApi.moveBookmark(id, { parentId: watchlistFolderId! });
           }
         }
       }
@@ -912,7 +962,22 @@ const App = () => {
   };
 
   return (
-    <div className="relative flex h-screen bg-bg text-text-primary font-sans overflow-hidden transition-colors duration-300 selection:bg-accent/30">
+    <div 
+      className="relative flex h-screen bg-bg text-text-primary font-sans overflow-hidden transition-colors duration-300 selection:bg-accent/30"
+      data-theme={settings.theme}
+      style={
+        {
+          "--glass-opacity": (settings.cardOpacity ?? 60) / 100,
+          "--card-blur": `${settings.cardBlur ?? 16}px`,
+          "--card-bg-color": settings.cardBackgroundColor || (settings.theme === 'dark' ? '#1e293b' : '#ffffff'),
+          "--card-bg": `color-mix(in srgb, var(--card-bg-color) calc(var(--glass-opacity) * 100%), transparent)`,
+          "--text-primary": settings.textColor || (settings.theme === 'dark' ? '#e2e8f0' : '#0f172a'),
+          "--bg-color": settings.backgroundColor || (settings.theme === 'dark' ? '#1a1c23' : '#f8fafc'),
+          "--app-brightness": (settings.textBrightness ?? 100) / 100,
+          filter: "brightness(var(--app-brightness))",
+        } as React.CSSProperties
+      }
+    >
       {settings.backgroundImage && (
         <div
           className="absolute inset-0 z-0 pointer-events-none transition-all duration-500"
@@ -926,20 +991,7 @@ const App = () => {
         />
       )}
 
-      <div 
-        className="relative z-10 flex h-full w-full"
-        style={
-          {
-            "--glass-opacity": (settings.cardOpacity ?? 60) / 100,
-            "--text-primary": settings.textColor || undefined,
-            "--bg-color": settings.backgroundColor || undefined,
-            "--card-bg-color": settings.cardBackgroundColor || undefined,
-            "--card-blur": `${settings.cardBlur ?? 16}px`,
-            "--app-brightness": (settings.textBrightness ?? 100) / 100,
-            filter: "brightness(var(--app-brightness))",
-          } as React.CSSProperties
-        }
-      >
+      <div className="relative z-10 flex h-full w-full">
         <Sidebar
           collapsed={settings.sidebarCollapsed}
           theme={settings.theme}
@@ -986,6 +1038,9 @@ const App = () => {
           }
           onSelectDashboard={() =>
             setSettings((s) => ({ ...s, activeSidebarItem: "dashboard" }))
+          }
+          onSelectWatchlist={() =>
+            setSettings((s) => ({ ...s, activeSidebarItem: "watchlist" }))
           }
           onSelectCustomize={() =>
             setSettings((s) => ({ ...s, activeSidebarItem: "customize" }))
@@ -1121,6 +1176,32 @@ const App = () => {
                             type: "reminder" 
                           });
                           setModalForceType("reminder");
+                          setIsModalOpen(true);
+                        }}
+                        onDelete={(id) => deleteItem(id)}
+                      />
+                    ) : settings.activeSidebarItem === "watchlist" ? (
+                      <WatchlistView
+                        watchlist={watchlistData}
+                        searchQuery={searchQuery}
+                        now={now}
+                        onCreate={() => {
+                          setModalForceType("bookmark");
+                          setModalInitialData({
+                            id: "",
+                            title: "",
+                            url: "",
+                            type: "watchlist" as any,
+                          });
+                          setIsModalOpen(true);
+                        }}
+                        onEdit={(item) => {
+                          setModalInitialData({
+                            ...item,
+                            url: getCleanUrlFromUrl(item.url),
+                            type: "watchlist" as any,
+                          });
+                          setModalForceType("bookmark");
                           setIsModalOpen(true);
                         }}
                         onDelete={(id) => deleteItem(id)}

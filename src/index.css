@@ -20,22 +20,12 @@ body {
 
 @layer base {
   :root {
-    /* Soft Dark Mode (Default) */
-    --bg-color: #1a1c23;
-    /* Reactive Card Appearance */
-    --main-card-bg: color-mix(in srgb, var(--card-bg-color, #1e293b) calc(var(--glass-opacity, 0.6) * 100%), transparent);
-    
-    --sidebar-bg: var(--main-card-bg);
-    --card-bg: var(--main-card-bg);
-    --card-border: rgba(148, 163, 184, 0.08);
-    --header-bg: var(--main-card-bg);
-    --text-primary: #e2e8f0;
-    --text-secondary: #94a3b8;
-    --app-blur: var(--card-blur, 16px);
+    /* Variables now mostly managed by App.tsx style object */
     --accent: #38bdf8;
     --accent-glow: rgba(56, 189, 248, 0.12);
     --danger: #f43f5e;
     --success: #10b981;
+    --card-border: rgba(255, 255, 255, 0.08);
     --scrollbar-track: transparent;
     --scrollbar-thumb: rgba(148, 163, 184, 0.15);
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
@@ -43,32 +33,35 @@ body {
   }
 
   [data-theme="light"] {
-    /* Soft Light Mode */
-    --bg-color: #f8fafc;
-    --sidebar-bg: #ffffff;
-    --card-bg: #ffffff;
-    --card-border: #e2e8f0;
-    --header-bg: rgba(248, 250, 252, 0.9);
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
+    --card-border: rgba(15, 23, 42, 0.08);
     --accent: #0284c7;
     --accent-glow: rgba(2, 132, 199, 0.12);
     --danger: #e11d48;
     --success: #059669;
     --scrollbar-thumb: #cbd5e1;
+    --text-secondary: #475569;
   }
 
+  /* Map derived variables to dynamic root variables */
+  * {
+    --sidebar-bg: var(--card-bg);
+    --header-bg: var(--card-bg);
+    /* Note: --bg-color, --text-primary, --card-bg are passed from App.tsx */
+  }
 
+  :root {
+    --text-secondary: #94a3b8;
+  }
 
   body {
     @apply bg-bg text-text-primary h-screen overflow-hidden transition-colors duration-300;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
-  /* Force global blur override for common utility classes */
-  .backdrop-blur-md, .backdrop-blur-2xl, .backdrop-blur-xl {
-    backdrop-filter: blur(var(--app-blur, 16px)) !important;
-    -webkit-backdrop-filter: blur(var(--app-blur, 16px)) !important;
+  /* Force global blur override for common utility classes to respect the slider */
+  .backdrop-blur-md, .backdrop-blur-2xl, .backdrop-blur-xl, .backdrop-blur-lg {
+    backdrop-filter: blur(var(--card-blur, 16px)) !important;
+    -webkit-backdrop-filter: blur(var(--card-blur, 16px)) !important;
   }
 }
 
@@ -81,11 +74,11 @@ body {
     scrollbar-width: none;
   }
   
-  /* Glassmorphism Effect */
+  /* Glassmorphism Effect - uses live --card-bg and --card-blur */
   .glass {
-    background-color: var(--card-bg-color, var(--card-bg));
-    backdrop-filter: blur(var(--app-blur, 16px));
-    -webkit-backdrop-filter: blur(var(--app-blur, 16px));
+    background-color: var(--card-bg) !important;
+    backdrop-filter: blur(var(--card-blur, 16px)) !important;
+    -webkit-backdrop-filter: blur(var(--card-blur, 16px)) !important;
     border: 1px solid var(--card-border);
     box-shadow: var(--shadow-md);
   }
@@ -113,12 +106,8 @@ body {
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
   }
 }
-  [data-theme="dark"] .glass {
-    background-color: var(--main-card-bg);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
 
-/* Protect images and icons from global brightness adjustments if applied to parent */
+/* Protect images and icons from global brightness adjustments */
 img, svg {
   filter: brightness(calc(1 / var(--app-brightness, 1)));
   will-change: filter;

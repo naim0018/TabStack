@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder, FileText, Bell, Trash2, Edit2, LayoutDashboard, Palette } from 'lucide-react';
+import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder, FileText, Bell, Trash2, Edit2, LayoutDashboard, Palette, Eye } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -17,6 +17,7 @@ interface SidebarProps {
   onSelectReminders: () => void;
   onSelectSpace: () => void;
   onSelectDashboard: () => void;
+  onSelectWatchlist: () => void;
   onSelectCustomize: () => void;
   onCreateBoard: () => void;
   onEditBoard?: (id: string, name: string) => void;
@@ -44,6 +45,7 @@ export function Sidebar({
   onSelectReminders,
   onSelectSpace,
   onSelectDashboard,
+  onSelectWatchlist,
   onSelectCustomize,
   onCreateBoard,
   onEditBoard,
@@ -107,14 +109,14 @@ export function Sidebar({
               ${collapsed ? 'justify-center p-2.5' : ''}
               ${
                 activeSidebarItem === 'dashboard'
-                  ? 'bg-border-card text-gray-200 shadow-sm'
-                  : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
+                  ? 'bg-border-card text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
               }
             `}
             title="Dashboard"
           >
             <LayoutDashboard size={18} className="flex-shrink-0" />
-            {!collapsed && <span className="text-gray-200 hover:text-gray-100 transition-colors">Dashboard</span>}
+            {!collapsed && <span className="transition-colors">Dashboard</span>}
           </button>
 
           <button
@@ -124,14 +126,14 @@ export function Sidebar({
               ${collapsed ? 'justify-center p-2.5' : ''}
               ${
                 activeSidebarItem === 'bookmarks' && activeBoardId === '1'
-                  ? 'bg-border-card text-gray-200 shadow-sm'
-                  : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
+                  ? 'bg-border-card text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
               }
             `}
             title="Bookmarks"
           >
             <Folder size={18} className="flex-shrink-0" />
-            {!collapsed && <span className="text-gray-200 hover:text-gray-100 transition-colors">Bookmarks</span>}
+            {!collapsed && <span className="transition-colors">Bookmarks</span>}
           </button>
           
           {/* <div className={`text-[10px] uppercase font-bold text-text-secondary/60 mb-2 px-3 mt-4 tracking-widest ${!collapsed ? '' : 'hidden'}`}>Library</div> */}
@@ -144,8 +146,8 @@ export function Sidebar({
                     ${collapsed ? 'justify-center p-2.5' : ''}
                     ${
                     activeSidebarItem === 'bookmarks' && activeBoardId === board.id && (activeTabId === 'tabs' || !activeTabId)
-                        ? 'bg-border-card text-gray-200 shadow-sm'
-                        : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
+                        ? 'bg-border-card text-text-primary shadow-sm'
+                        : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
                     }
                 `}
                 title={board.name}
@@ -163,8 +165,8 @@ export function Sidebar({
               ${collapsed ? 'justify-center p-2.5' : ''}
               ${
                 activeSidebarItem === 'notes'
-                  ? 'bg-border-card text-gray-200 shadow-sm'
-                  : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
+                  ? 'bg-border-card text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
               }
             `}
             title="Notes"
@@ -180,14 +182,31 @@ export function Sidebar({
               ${collapsed ? 'justify-center p-2.5' : ''}
               ${
                 activeSidebarItem === 'reminders'
-                  ? 'bg-border-card text-gray-200 shadow-sm'
-                  : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
+                  ? 'bg-border-card text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
               }
             `}
             title="Reminders"
           >
             <Bell size={18} className="flex-shrink-0" />
             {!collapsed && <span>Reminders</span>}
+          </button>
+
+          <button
+            onClick={onSelectWatchlist}
+            className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-all w-full
+              ${collapsed ? 'justify-center p-2.5' : ''}
+              ${
+                activeSidebarItem === 'watchlist'
+                  ? 'bg-border-card text-text-primary shadow-sm'
+                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+              }
+            `}
+            title="Watch List"
+          >
+            <Eye size={18} className="flex-shrink-0" />
+            {!collapsed && <span>Watch List</span>}
           </button>
         </div>
 
@@ -197,7 +216,7 @@ export function Sidebar({
           onClick={onCreateBoard}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
-            text-gray-200 hover:bg-border-card hover:text-gray-100
+            text-text-secondary hover:bg-border-card hover:text-text-primary
             ${collapsed ? 'justify-center p-2.5' : ''}
           `}
           title="Create Board"
@@ -213,8 +232,8 @@ export function Sidebar({
             ${collapsed ? 'justify-center p-2.5' : ''}
             ${
               activeSidebarItem === 'spaces'
-                ? 'bg-border-card text-gray-200 shadow-sm'
-                : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
+                ? 'bg-border-card text-text-primary shadow-sm'
+                : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
             }
           `}
           title="Spaces"
@@ -232,8 +251,8 @@ export function Sidebar({
             ${collapsed ? 'justify-center p-2.5' : ''}
             ${
               activeSidebarItem === 'customize'
-                ? 'bg-border-card text-gray-200 shadow-sm'
-                : 'text-gray-200 hover:bg-border-card hover:text-gray-100'
+                ? 'bg-border-card text-text-primary shadow-sm'
+                : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
             }
           `}
           title="Customize"

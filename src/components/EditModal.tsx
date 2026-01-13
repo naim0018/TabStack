@@ -5,14 +5,14 @@ interface EditModalProps {
   onClose: () => void;
   onSave: (data: EditData) => void;
   initialData?: EditData | null;
-  forceType?: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | null;
+  forceType?: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | 'watchlist' | null;
 }
 
 export interface EditData {
   id?: string;
   title: string;
   url?: string;
-  type: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink';
+  type: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | 'watchlist';
   description?: string;
   deadline?: string;
 }
@@ -76,6 +76,7 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
                 <option value="folder">Folder</option>
                 <option value="reminder">Reminder</option>
                 <option value="note">Note</option>
+                <option value="watchlist">Watchlist Item</option>
               </select>
             </div>
           )}
