@@ -166,9 +166,9 @@ export function ReminderCard({
                   {isPast ? "Expired" : "Deadline"}
                 </span>
               </div>
-              {countdownText && (
+              {countdownText && !isPast && (
                 <div className={`px-3 py-1 rounded-lg text-sm font-mono font-bold border transition-all ${
-                  isPast || isUrgent ? "text-danger border-danger/30 bg-danger/10 animate-pulse" : "text-accent border-accent/30 bg-accent/10"
+                  isUrgent ? "text-danger border-danger/30 bg-danger/10 animate-pulse" : "text-accent border-accent/30 bg-accent/10"
                 }`}>
                   {countdownText}
                 </div>

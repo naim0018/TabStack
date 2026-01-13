@@ -23,7 +23,25 @@ export function RemindersView({
     (r) =>
       r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (r.description || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ).sort((a, b) => {
+    const timeA = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+    const timeB = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+    
+    const isPastA = timeA <= now;
+    const isPastB = timeB <= now;
+
+    if (isPastA && !isPastB) return 1;
+    if (!isPastA && isPastB) return -1;
+    
+    // Both are either past or future
+    if (isPastA && isPastB) {
+      // For expired, show most recently expired first
+      return timeB - timeA;
+    }
+    
+    // For future, show soonest first
+    return timeA - timeB;
+  });
 
   return (
     <div className="animate-in fade-in duration-500">

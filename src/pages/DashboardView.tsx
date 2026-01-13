@@ -50,24 +50,34 @@ export function DashboardView({
               </button>
             </div>
 
-            {reminders.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {reminders.map((reminder: any) => (
-                  <Card
-                    key={reminder.id}
-                    item={reminder}
-                    now={now}
-                    onEdit={() => onEditReminder(reminder)}
-                    onDelete={() => onDeleteReminder(reminder.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-[200px] text-text-secondary opacity-50">
-                <Bell size={48} className="mb-4 opacity-20" />
-                <p>No active reminders</p>
-              </div>
-            )}
+            {(() => {
+              const activeReminders = reminders
+                .filter((r) => !r.deadline || new Date(r.deadline).getTime() > now)
+                .sort((a, b) => {
+                  if (!a.deadline) return 1;
+                  if (!b.deadline) return -1;
+                  return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+                });
+
+              return activeReminders.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {activeReminders.map((reminder: any) => (
+                    <Card
+                      key={reminder.id}
+                      item={reminder}
+                      now={now}
+                      onEdit={() => onEditReminder(reminder)}
+                      onDelete={() => onDeleteReminder(reminder.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[200px] text-text-secondary opacity-50">
+                  <Bell size={48} className="mb-4 opacity-20" />
+                  <p>No active reminders</p>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Most Visited Sites (Compact) */}
