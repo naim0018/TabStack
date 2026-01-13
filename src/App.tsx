@@ -161,7 +161,7 @@ const App = () => {
         chromeApi.getTree(),
         chromeApi.getMetadata(),
         chromeApi.getTopSites(),
-        chromeApi.getHistory(20),
+        chromeApi.getHistory(50),
       ]);
       setTabs(t || []);
       setTree(tr || []);
