@@ -112,16 +112,23 @@ export const chromeApi = {
         console.log('Saved metadata:', metadata);
     },
     /**
-     * Fetches extension settings from Chrome's sync storage.
-     * If not in an extension environment, fetches from localStorage or returns default settings.
-     * @param {any} defaultSettings The default settings to use if none are found.
-     * @returns {Promise<any>} A promise that resolves with the application settings.
+     * Fetches extension settings from Chrome storage.
+     * Uses sync storage for general settings and local storage for large assets like background images.
      */
     getSettings: async (defaultSettings: any): Promise<any> => {
         if (isExtension) {
             return new Promise((resolve) => {
-                chrome.storage.sync.get(['appSettings'], (result) => {
-                    resolve(result.appSettings || defaultSettings);
+                chrome.storage.sync.get(['appSettings'], (syncResult) => {
+                    const settings = syncResult.appSettings || defaultSettings;
+                    
+                    // Check if there is a locally stored background image override
+                    chrome.storage.local.get(['localBackgroundImage'], (localResult) => {
+                        if (localResult.localBackgroundImage) {
+                            resolve({ ...settings, backgroundImage: localResult.localBackgroundImage });
+                        } else {
+                            resolve(settings);
+                        }
+                    });
                 });
             });
         }
@@ -129,14 +136,28 @@ export const chromeApi = {
         return stored ? JSON.parse(stored) : defaultSettings;
     },
     /**
-     * Saves extension settings to Chrome's sync storage.
-     * If not in an extension environment, saves to localStorage.
-     * @param {any} settings The settings object to save.
-     * @returns {Promise<void>} A promise that resolves when the settings are saved.
+     * Saves extension settings.
+     * Large background images (Data URLs) are saved to local storage.
+     * General settings and remote URLs are saved to sync storage.
      */
     saveSettings: async (settings: any) => {
         if (isExtension) {
-            return chrome.storage.sync.set({ appSettings: settings });
+            const { backgroundImage, ...syncSettings } = settings;
+            const isLocalImage = backgroundImage && backgroundImage.startsWith('data:');
+
+            if (isLocalImage) {
+                // Store large image locally and save placeholder in sync
+                await chrome.storage.local.set({ localBackgroundImage: backgroundImage });
+                return chrome.storage.sync.set({ 
+                    appSettings: { ...syncSettings, backgroundImage: 'LOCAL_UPLOAD' } 
+                });
+            } else {
+                // If it's a URL or empty, remove local override and save normally
+                await chrome.storage.local.remove('localBackgroundImage');
+                return chrome.storage.sync.set({ 
+                    appSettings: { ...syncSettings, backgroundImage } 
+                });
+            }
         }
         localStorage.setItem('tabstack-settings', JSON.stringify(settings));
         console.log('Saved settings:', settings);
