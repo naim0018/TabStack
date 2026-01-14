@@ -48,7 +48,8 @@ export interface BookmarkItem {
   parentId?: string;
   dateAdded?: number;
   children?: BookmarkItem[];
-  type?: "bookmark" | "folder" | "reminder" | "note" | "quicklink" | "watchlist";
+  type?: "bookmark" | "folder" | "reminder" | "note" | "quicklink" | "watchlist" | "mostvisited";
   description?: string;
   deadline?: string;
+  customAdded?: boolean;
 }

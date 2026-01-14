@@ -121,6 +121,9 @@ const App = () => {
   const [watchlistFolderId, setWatchlistFolderId] = useState<string | null>(
     null
   );
+  const [mostVisitedFolderId, setMostVisitedFolderId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -133,7 +136,7 @@ const App = () => {
     null
   );
   const [modalForceType, setModalForceType] = useState<
-    "bookmark" | "folder" | "reminder" | "note" | "watchlist" | null
+    "bookmark" | "folder" | "reminder" | "note" | "watchlist" | "mostvisited" | null
   >(null);
 
   const [confirmState, setConfirmState] = useState<{
@@ -145,7 +148,7 @@ const App = () => {
     isOpen: false,
     title: "",
     message: "",
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   // Drag State
@@ -193,8 +196,8 @@ const App = () => {
           if (n.children) {
             const f = findFolder(n.children, title, parentId);
             if (f) {
-               if (f.children && f.children.length > 0) return f;
-               if (!bestMatch) bestMatch = f;
+              if (f.children && f.children.length > 0) return f;
+              if (!bestMatch) bestMatch = f;
             }
           }
         }
@@ -326,7 +329,29 @@ const App = () => {
       }
       setWatchlistFolderId(wlFolderNode.id);
 
-      // 6. Migrate legacy boards from Root to Parent
+      // 6. Find or Create MostVisited inside Parent
+      let mvFolderNode = findFolder(
+        tsParent.children || [],
+        "MostVisited",
+        tsParent.id
+      );
+      if (!mvFolderNode) {
+        isMoving.current = true;
+        mvFolderNode = await chromeApi.createBookmark({
+          parentId: tsParent.id,
+          title: "MostVisited",
+        });
+        isMoving.current = false;
+        // Refresh tree again to ensure we have the newly created node with its children
+        const updatedTree = await chromeApi.getTree();
+        setTree(updatedTree);
+        tr[0] = updatedTree[0];
+        tsParent = findFolder(updatedTree, "TabStack");
+        mvFolderNode = findFolder(tsParent.children || [], "MostVisited", tsParent.id);
+      }
+      setMostVisitedFolderId(mvFolderNode.id);
+
+      // 7. Migrate legacy boards from Root to Parent
       const legacyBoards = rootNodes.filter(
         (n) =>
           !n.url &&
@@ -655,6 +680,49 @@ const App = () => {
     return folder.children.map((n: any) => enrichItem(n, metadata));
   }, [tree, watchlistFolderId, metadata]);
 
+  const mostVisitedData = useMemo(() => {
+    // Get custom sites from MostVisited folder
+    const customSites: any[] = [];
+    if (mostVisitedFolderId && tree && tree.length > 0) {
+      const findFolder = (nodes: any[]): any => {
+        for (let n of nodes) {
+          if (n.id === mostVisitedFolderId) return n;
+          if (n.children) {
+            const f = findFolder(n.children);
+            if (f) return f;
+          }
+        }
+        return null;
+      };
+      const folder = findFolder(tree);
+      if (folder && folder.children) {
+        folder.children.forEach((n: any) => {
+          const enriched = enrichItem(n, metadata);
+          customSites.push({
+            ...enriched,
+            customAdded: true,
+            type: 'mostvisited'
+          });
+        });
+      }
+    }
+
+    // Merge custom sites with Chrome topSites, avoiding duplicates
+    const merged = [...customSites];
+    topSites.forEach((site: any) => {
+      const isDuplicate = customSites.some(cs => cs.url === site.url);
+      if (!isDuplicate) {
+        merged.push({
+          ...site,
+          customAdded: false
+        });
+      }
+    });
+
+    return merged.slice(0, 10); // Limit to 10 sites
+  }, [tree, mostVisitedFolderId, metadata, topSites]);
+
+
   // Handlers
   const handleToggleSection = (id: string) => {
     setSettings((prev) => ({
@@ -724,9 +792,8 @@ const App = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `tabstack-backup-${
-        new Date().toISOString().split("T")[0]
-      }.json`;
+      a.download = `tabstack-backup-${new Date().toISOString().split("T")[0]
+        }.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -812,14 +879,16 @@ const App = () => {
           type === "note"
             ? notesFolderId || "1"
             : type === "reminder"
-            ? remindersFolderId || "1"
-            : type === "quicklink"
-            ? quickLinksFolderId || "1"
-            : type === "watchlist" || settings.activeSidebarItem === "watchlist"
-            ? watchlistFolderId || "1"
-            : settings.activeTab !== "tabs"
-            ? settings.activeTab
-            : settings.activeBoardId;
+              ? remindersFolderId || "1"
+              : type === "quicklink"
+                ? quickLinksFolderId || "1"
+                : type === "watchlist" || settings.activeSidebarItem === "watchlist"
+                  ? watchlistFolderId || "1"
+                  : type === "mostvisited"
+                    ? mostVisitedFolderId || "1"
+                    : settings.activeTab !== "tabs"
+                      ? settings.activeTab
+                      : settings.activeBoardId;
         const createParams: any = {
           parentId:
             parentId === "tabs" || parentId === "Space" ? "1" : parentId,
@@ -860,6 +929,8 @@ const App = () => {
             await chromeApi.moveBookmark(id, { parentId: remindersFolderId! });
           } else if (type === "watchlist" && node.parentId !== watchlistFolderId) {
             await chromeApi.moveBookmark(id, { parentId: watchlistFolderId! });
+          } else if (type === "mostvisited" && node.parentId !== mostVisitedFolderId) {
+            await chromeApi.moveBookmark(id, { parentId: mostVisitedFolderId! });
           }
         }
       }
@@ -970,7 +1041,7 @@ const App = () => {
   };
 
   return (
-    <div 
+    <div
       className="relative flex h-screen bg-bg text-text-primary font-sans overflow-hidden transition-colors duration-300 selection:bg-accent/30"
       data-theme={settings.theme}
       style={
@@ -1064,9 +1135,8 @@ const App = () => {
           tabStackFolderId={tabStackFolderId || undefined}
         />
         <main
-          className={`flex-1 flex flex-col min-w-0 relative ${
-            settings.backgroundImage ? "bg-transparent" : "bg-bg"
-          }`}
+          className={`flex-1 flex flex-col min-w-0 relative ${settings.backgroundImage ? "bg-transparent" : "bg-bg"
+            }`}
 
         >
           <TopBar
@@ -1104,7 +1174,7 @@ const App = () => {
                         reminders={reminders}
                         quickLinks={quickLinksData}
                         now={now}
-                        topSites={topSites}
+                        topSites={mostVisitedData}
                         history={history}
                         onCreateReminder={() => {
                           setModalForceType("reminder");
@@ -1141,6 +1211,26 @@ const App = () => {
                           setIsModalOpen(true);
                         }}
                         onDeleteQuickLink={(id) => deleteItem(id)}
+                        onAddMostVisited={() => {
+                          setModalForceType("mostvisited");
+                          setModalInitialData({
+                            id: "",
+                            title: "",
+                            url: "",
+                            type: "mostvisited",
+                          });
+                          setIsModalOpen(true);
+                        }}
+                        onEditMostVisited={(site) => {
+                          setModalInitialData({
+                            ...site,
+                            url: getCleanUrlFromUrl(site.url),
+                            type: "mostvisited",
+                          });
+                          setModalForceType("mostvisited");
+                          setIsModalOpen(true);
+                        }}
+                        onDeleteMostVisited={(id) => deleteItem(id)}
                       />
                     ) : settings.activeSidebarItem === "spaces" ? (
                       <SpacesView
@@ -1158,10 +1248,10 @@ const App = () => {
                           setIsModalOpen(true);
                         }}
                         onEdit={(n) => {
-                          setModalInitialData({ 
-                            ...n, 
+                          setModalInitialData({
+                            ...n,
                             url: getCleanUrlFromUrl(n.url),
-                            type: "note" 
+                            type: "note"
                           });
                           setModalForceType("note");
                           setIsModalOpen(true);
@@ -1179,10 +1269,10 @@ const App = () => {
                           setIsModalOpen(true);
                         }}
                         onEdit={(r) => {
-                          setModalInitialData({ 
-                            ...r, 
+                          setModalInitialData({
+                            ...r,
                             url: getCleanUrlFromUrl(r.url),
-                            type: "reminder" 
+                            type: "reminder"
                           });
                           setModalForceType("reminder");
                           setIsModalOpen(true);
@@ -1288,7 +1378,7 @@ const App = () => {
                         reminders={reminders}
                         quickLinks={quickLinksData}
                         now={now}
-                        topSites={topSites}
+                        topSites={mostVisitedData}
                         history={history}
                         onEditReminder={(r) => {
                           setModalForceType(null);
@@ -1325,6 +1415,26 @@ const App = () => {
                           setIsModalOpen(true);
                         }}
                         onDeleteQuickLink={(id) => deleteItem(id)}
+                        onAddMostVisited={() => {
+                          setModalForceType("mostvisited");
+                          setModalInitialData({
+                            id: "",
+                            title: "",
+                            url: "",
+                            type: "mostvisited",
+                          });
+                          setIsModalOpen(true);
+                        }}
+                        onEditMostVisited={(site) => {
+                          setModalInitialData({
+                            ...site,
+                            url: getCleanUrlFromUrl(site.url),
+                            type: "mostvisited",
+                          });
+                          setModalForceType("mostvisited");
+                          setIsModalOpen(true);
+                        }}
+                        onDeleteMostVisited={(id) => deleteItem(id)}
                       />
                     )}
                   </div>
@@ -1332,79 +1442,29 @@ const App = () => {
 
                 {settings.activeSidebarItem !== "dashboard" ? (
                   <aside className="flex flex-col gap-6 sticky top-4 h-fit max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar pb-10">
-                    {topSites.length > 0 && (
-                      <div className="w-full">
-                        <div
-                          className="flex items-center gap-2 mb-4 cursor-pointer select-none group/title"
-                          onClick={() => handleToggleSection("topsites")}
-                        >
-                          <div
-                            className={`p-1 rounded-md text-text-secondary group-hover/title:bg-border-card transition-all ${
-                              settings.collapsedSections.includes("topsites")
-                                ? "-rotate-90"
-                                : ""
-                            }`}
-                          >
-                            <ChevronDown size={14} />
-                          </div>
-                          <h3 className="text-[14px] font-bold text-text-primary/90 flex items-center gap-2 uppercase tracking-wide">
-                            Most Visited
-                            <span className="text-text-secondary text-[10px] font-bold opacity-30 ml-1 bg-border-card px-1.5 py-0.5 rounded-full">
-                              {topSites.length}
-                            </span>
-                          </h3>
-                        </div>
-
-                        {!settings.collapsedSections.includes("topsites") && (
-                          <div className="grid grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                            {topSites.map((site: any, idx: number) => (
-                              <div
-                                key={idx}
-                                onClick={() =>
-                                  site.url && (window.location.href = site.url)
-                                }
-                                className="p-3 rounded-xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-center cursor-pointer group"
-                              >
-                                <img
-                                  src={`https://www.google.com/s2/favicons?domain=${
-                                    site.url || ""
-                                  }&sz=64`}
-                                  className="w-8 h-8 mx-auto mb-2 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all"
-                                  alt=""
-                                />
-                                <div className="text-[11px] font-bold text-text-primary truncate">
-                                  {site.title}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     {(looseBookmarks.length > 0 ||
                       (settings.activeSidebarItem !== "dashboard" &&
                         settings.activeSidebarItem !== "spaces")) && (
-                      <SectionList
-                        title="Quick Links"
-                        items={looseBookmarks}
-                        id="loose"
-                        settings={settings}
-                        searchQuery={searchQuery}
-                        now={now}
-                        draggingId={draggingId}
-                        onToggleSection={handleToggleSection}
-                        onDrop={handleDrop}
-                        onDragStart={handleDragStart}
-                        onItemClick={handleCardClick}
-                        onItemEdit={(item: any) => {
-                          setModalInitialData(item);
-                          setModalForceType("bookmark");
-                          setIsModalOpen(true);
-                        }}
-                        onItemDelete={(item: any) => deleteItem(item.id)}
-                      />
-                    )}
+                        <SectionList
+                          title="Quick Links"
+                          items={looseBookmarks}
+                          id="loose"
+                          settings={settings}
+                          searchQuery={searchQuery}
+                          now={now}
+                          draggingId={draggingId}
+                          onToggleSection={handleToggleSection}
+                          onDrop={handleDrop}
+                          onDragStart={handleDragStart}
+                          onItemClick={handleCardClick}
+                          onItemEdit={(item: any) => {
+                            setModalInitialData(item);
+                            setModalForceType("bookmark");
+                            setIsModalOpen(true);
+                          }}
+                          onItemDelete={(item: any) => deleteItem(item.id)}
+                        />
+                      )}
                   </aside>
                 ) : (
                   <div className="flex flex-col gap-6">

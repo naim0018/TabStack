@@ -16,6 +16,9 @@ interface DashboardProps {
   onAddQuickLink: () => void;
   onEditQuickLink: (link: BookmarkItem) => void;
   onDeleteQuickLink: (id: string) => void;
+  onAddMostVisited: () => void;
+  onEditMostVisited: (site: any) => void;
+  onDeleteMostVisited: (id: string) => void;
 }
 
 export function DashboardView({
@@ -32,121 +35,161 @@ export function DashboardView({
   onAddQuickLink,
   onEditQuickLink,
   onDeleteQuickLink,
+  onAddMostVisited,
+  onEditMostVisited,
+  onDeleteMostVisited,
 }: DashboardProps) {
   return (
     <div className="animate-in fade-in duration-500">
       <div className="flex flex-col gap-6">
-          {/* Active Reminders */}
-          <div className="glass border border-border-card rounded-3xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-sm font-black uppercase tracking-tight flex items-center gap-2 text-text-primary">
-                <Bell size={16} className="text-accent" /> Active Reminders
-              </h2>
-              <button
-                onClick={onCreateReminder}
-                className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-bold hover:bg-accent/20 transition-all"
-              >
-                + Add New
-              </button>
-            </div>
-
-            {(() => {
-              const activeReminders = reminders
-                .filter((r) => !r.deadline || new Date(r.deadline).getTime() > now)
-                .sort((a, b) => {
-                  if (!a.deadline) return 1;
-                  if (!b.deadline) return -1;
-                  return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-                });
-
-              return activeReminders.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {activeReminders.map((reminder: any) => (
-                    <Card
-                      key={reminder.id}
-                      item={reminder}
-                      now={now}
-                      onEdit={() => onEditReminder(reminder)}
-                      onDelete={() => onDeleteReminder(reminder.id)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-[200px] text-text-secondary opacity-50">
-                  <Bell size={48} className="mb-4 opacity-20" />
-                  <p>No active reminders</p>
-                </div>
-              );
-            })()}
+        {/* Active Reminders */}
+        <div className="glass border border-border-card rounded-3xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-sm font-black uppercase tracking-tight flex items-center gap-2 text-text-primary">
+              <Bell size={16} className="text-accent" /> Active Reminders
+            </h2>
+            <button
+              onClick={onCreateReminder}
+              className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-bold hover:bg-accent/20 transition-all"
+            >
+              + Add New
+            </button>
           </div>
 
-          {/* Most Visited Sites (Compact) */}
-          {topSites?.length > 0 && (
-            <div className="glass border border-border-card rounded-3xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-text-secondary">
-                  <ExternalLink size={14} className="text-accent/60" /> Most Visited
-                </h2>
+          {(() => {
+            const activeReminders = reminders
+              .filter((r) => !r.deadline || new Date(r.deadline).getTime() > now)
+              .sort((a, b) => {
+                if (!a.deadline) return 1;
+                if (!b.deadline) return -1;
+                return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+              });
+
+            return activeReminders.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {activeReminders.map((reminder: any) => (
+                  <Card
+                    key={reminder.id}
+                    item={reminder}
+                    now={now}
+                    onEdit={() => onEditReminder(reminder)}
+                    onDelete={() => onDeleteReminder(reminder.id)}
+                  />
+                ))}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {topSites.slice(0, 10).map((site: any, idx: number) => (
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[200px] text-text-secondary opacity-50">
+                <Bell size={48} className="mb-4 opacity-20" />
+                <p>No active reminders</p>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Most Visited Sites (Compact) */}
+        {topSites?.length > 0 && (
+          <div className="glass border border-border-card rounded-3xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-text-secondary">
+                <ExternalLink size={14} className="text-accent/60" /> Most Visited
+              </h2>
+              <button
+                onClick={onAddMostVisited}
+                className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-bold hover:bg-accent/20 transition-all"
+              >
+                + Add Site
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {topSites.slice(0, 10).map((site: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="relative group/site"
+                >
                   <a
-                    key={idx}
                     href={site.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all group max-w-[160px]"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all max-w-[160px]"
                     title={site.title}
                   >
                     <img
-                      src={`https://www.google.com/s2/favicons?domain=${
-                        site.url || ""
-                      }&sz=32`}
+                      src={`https://www.google.com/s2/favicons?domain=${site.url || ""
+                        }&sz=32`}
                       alt=""
-                      className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity"
+                      className="w-4 h-4 opacity-70 group-hover/site:opacity-100 transition-opacity"
                     />
                     <span className="text-[11px] font-bold text-text-primary truncate">
                       {site.title}
                     </span>
+                    {site.customAdded && (
+                      <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded bg-accent/20 text-accent font-bold">
+                        CUSTOM
+                      </span>
+                    )}
                   </a>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Last Visited Sites (Compact) */}
-          {history?.length > 0 && (
-            <div className="glass border border-border-card rounded-3xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-text-secondary">
-                  <Clock size={14} className="text-accent/60" /> Recently Visited ({history.length})
-                </h2>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                {history.map((item: any, idx: number) => (
-                  <a
-                    key={idx}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-bg-card/50 border border-border-card/50 hover:border-accent/30 hover:bg-accent/5 transition-all group overflow-hidden"
-                    title={item.title || item.url}
-                  >
-                    <img
-                      src={`https://www.google.com/s2/favicons?domain=${
-                        item.url || ""
-                      }&sz=32`}
-                      alt=""
-                      className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                    />
-                    <span className="text-[10px] font-medium text-text-secondary group-hover:text-text-primary truncate">
-                      {item.title || "Untitled"}
-                    </span>
-                  </a>
-                ))}
-              </div>
+                  {/* Edit/Delete actions for custom sites */}
+                  {site.customAdded && (
+                    <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover/site:opacity-100 transition-opacity scale-75 group-hover/site:scale-100 duration-300 z-10">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditMostVisited(site);
+                        }}
+                        className="p-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-accent transition-colors shadow-lg"
+                      >
+                        <Edit2 size={10} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteMostVisited(site.id);
+                        }}
+                        className="p-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-red-500 transition-colors shadow-lg"
+                      >
+                        <Trash2 size={10} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Last Visited Sites (Compact) */}
+        {history?.length > 0 && (
+          <div className="glass border border-border-card rounded-3xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-text-secondary">
+                <Clock size={14} className="text-accent/60" /> Recently Visited ({history.length})
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+              {history.map((item: any, idx: number) => (
+                <a
+                  key={idx}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-bg-card/50 border border-border-card/50 hover:border-accent/30 hover:bg-accent/5 transition-all group overflow-hidden"
+                  title={item.title || item.url}
+                >
+                  <img
+                    src={`https://www.google.com/s2/favicons?domain=${item.url || ""
+                      }&sz=32`}
+                    alt=""
+                    className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                  />
+                  <span className="text-[10px] font-medium text-text-secondary group-hover:text-text-primary truncate">
+                    {item.title || "Untitled"}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
 
@@ -164,9 +207,8 @@ export function DashboardView({
               >
                 <div className="w-14 h-14 rounded-[1.2rem] bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-sm border border-white/5 overflow-hidden">
                   <img
-                    src={`https://www.google.com/s2/favicons?domain=${
-                      link.url || ""
-                    }&sz=128`}
+                    src={`https://www.google.com/s2/favicons?domain=${link.url || ""
+                      }&sz=128`}
                     alt={link.title}
                     className="w-10 h-10 object-contain drop-shadow-md"
                   />
@@ -176,7 +218,7 @@ export function DashboardView({
                   {link.title}
                 </div>
               </a>
-              
+
               {/* Quick Actions */}
               <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover/ql:opacity-100 transition-opacity scale-75 group-hover/ql:scale-100 duration-300">
                 <button
@@ -217,9 +259,8 @@ export function DashboardView({
               >
                 <div className="w-14 h-14 rounded-[1.2rem] bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-sm border border-white/5 overflow-hidden">
                   <img
-                    src={`https://www.google.com/s2/favicons?domain=${
-                      site.url || ""
-                    }&sz=128`}
+                    src={`https://www.google.com/s2/favicons?domain=${site.url || ""
+                      }&sz=128`}
                     alt={site.title}
                     className="w-10 h-10 object-contain drop-shadow-md opacity-70 group-hover:opacity-100"
                   />

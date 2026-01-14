@@ -5,14 +5,14 @@ interface EditModalProps {
   onClose: () => void;
   onSave: (data: EditData) => void;
   initialData?: EditData | null;
-  forceType?: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | 'watchlist' | null;
+  forceType?: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | 'watchlist' | 'mostvisited' | null;
 }
 
 export interface EditData {
   id?: string;
   title: string;
   url?: string;
-  type: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | 'watchlist';
+  type: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | 'watchlist' | 'mostvisited';
   description?: string;
   deadline?: string;
 }
