@@ -85,14 +85,14 @@ export const chromeApi = {
         ] as chrome.history.HistoryItem[];
     },
     /**
-     * Fetches custom bookmark metadata from Chrome's sync storage.
-     * If not in an extension environment, returns an empty object.
+     * Fetches custom bookmark metadata from Chrome's local storage.
+     * We use local storage for performance and size, relying on URL hashes for cross-device sync.
      * @returns {Promise<Record<string, any>>} A promise that resolves with the bookmark metadata.
      */
     getMetadata: async (): Promise<Record<string, any>> => {
         if (isExtension) {
             return new Promise((resolve) => {
-                chrome.storage.sync.get(['bookmarkMetadata'], (result) => {
+                chrome.storage.local.get(['bookmarkMetadata'], (result) => {
                     resolve(result.bookmarkMetadata || {});
                 });
             });
@@ -100,14 +100,15 @@ export const chromeApi = {
         return {}; // Mock metadata
     },
     /**
-     * Saves custom bookmark metadata to Chrome's sync storage.
-     * If not in an extension environment, logs the metadata to the console.
+     * Saves custom bookmark metadata to Chrome's local storage.
+     * Reliance on sync storage for metadata often hits quota limits. 
+     * URL hash encoding is our primary cross-device sync mechanism.
      * @param {any} metadata The metadata object to save.
      * @returns {Promise<void>} A promise that resolves when the metadata is saved.
      */
     saveMetadata: async (metadata: any) => {
         if (isExtension) {
-            return chrome.storage.sync.set({ bookmarkMetadata: metadata });
+            return chrome.storage.local.set({ bookmarkMetadata: metadata });
         }
         console.log('Saved metadata:', metadata);
     },
@@ -121,6 +122,10 @@ export const chromeApi = {
                 if (localResult.localBackgroundImage) {
                     resolve({ ...settings, backgroundImage: localResult.localBackgroundImage });
                 } else {
+                    // If LOCAL_UPLOAD is present but image is missing (e.g. on another device),
+                    // we keep the placeholder so it can be resolved if they upload a new one,
+                    // but the UI should handle the missing source.
+                    console.warn('TabStack: Local image missing on this device.');
                     resolve(settings);
                 }
             });

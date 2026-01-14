@@ -405,11 +405,9 @@ const App = () => {
           }
         });
 
-        // Validate existence
-        const validBoards = mergedBoards.filter((b) => {
-          if (b.id === notesFolderNode.id || b.id === remFolderNode.id || b.id === wlFolderNode.id)
-            return false;
-          
+        // Validate existence - we are now less aggressive to avoid race conditions during sync.
+        // Instead of pruning immediately, we just ensure IDs are correct if names match.
+        const updatedBoards = mergedBoards.map(b => {
           const findInTree = (nodes: any[]): any => {
             for (let n of nodes) {
               if (n.id === b.id || (n.title === b.name && !n.url)) return n;
@@ -422,13 +420,13 @@ const App = () => {
           };
           const node = findInTree(tr);
           if (node && node.id !== b.id) {
-            b.id = node.id; // Corrected ID in place
+            return { ...b, id: node.id };
           }
-          return !!node;
+          return b;
         });
 
-        if (JSON.stringify(validBoards) !== JSON.stringify(settings.boards)) {
-          setSettings((s) => ({ ...s, boards: validBoards }));
+        if (JSON.stringify(updatedBoards) !== JSON.stringify(settings.boards)) {
+          setSettings((s) => ({ ...s, boards: updatedBoards }));
         }
       }
     } catch (err) {
@@ -459,17 +457,14 @@ const App = () => {
 
       // Listen for storage changes (sync across devices)
       const storageHandler = async (changes: any, area: string) => {
-        if (area === "sync") {
-          if (changes.appSettings) {
-            isProcessingSync.current = true;
-            const resolved = await chromeApi.resolveLocalSettings(changes.appSettings.newValue);
-            setSettings(resolved);
-            setTimeout(() => { isProcessingSync.current = false; }, 200);
-          }
-          if (changes.bookmarkMetadata) {
-            setMetadata(changes.bookmarkMetadata.newValue);
-          }
+        if (area === "sync" && changes.appSettings) {
+          isProcessingSync.current = true;
+          const resolved = await chromeApi.resolveLocalSettings(changes.appSettings.newValue);
+          setSettings(resolved);
+          setTimeout(() => { isProcessingSync.current = false; }, 200);
         }
+        // Bookmark metadata is now local + URL hash, so we don't need to listen for sync changes here
+        // as URL hash changes are handled by chrome.bookmarks.onChanged
       };
       chrome.storage.onChanged.addListener(storageHandler);
 
@@ -694,14 +689,23 @@ const App = () => {
         ? "Are you sure you want to delete this board and all its contents?"
         : "Are you sure you want to permanently delete this item?",
       onConfirm: async () => {
-        await chromeApi.removeTree(id);
-        if (isBoard && settings.activeBoardId === id) {
-          setSettings((s) => ({
-            ...s,
-            activeBoardId: tabStackFolderId || "1",
-          }));
+        try {
+          await chromeApi.removeTree(id);
+          setSettings((s) => {
+            const newSettings = { ...s };
+            // Remove from boards list if it was a board
+            if (isBoard) {
+              newSettings.boards = s.boards.filter(b => b.id !== id);
+              if (s.activeBoardId === id) {
+                newSettings.activeBoardId = tabStackFolderId || "1";
+              }
+            }
+            return newSettings;
+          });
+          refreshData();
+        } catch (e) {
+          console.error("Delete failed", e);
         }
-        refreshData();
       },
     });
   };

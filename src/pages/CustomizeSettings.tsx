@@ -207,16 +207,27 @@ export function CustomizeSettings({
               Remove
             </button>
           </div>
-          <div className="relative h-48 rounded-2xl overflow-hidden border border-border-card">
-            <img
-              src={settings.backgroundImage}
-              alt="Current background"
-              className="w-full h-full object-cover"
-              style={{
-                opacity: (settings.backgroundOpacity || 50) / 100,
-                filter: `blur(${settings.backgroundBlur || 0}px)`,
-              }}
-            />
+          <div className="relative h-48 rounded-2xl overflow-hidden border border-border-card bg-bg-card/50 flex items-center justify-center">
+            {settings.backgroundImage === 'LOCAL_UPLOAD' ? (
+              <div className="text-center p-6">
+                <Upload size={40} className="mx-auto mb-3 text-text-secondary opacity-20" />
+                <p className="text-sm font-bold text-text-secondary">Image stored on another device</p>
+                <p className="text-[10px] text-text-secondary mt-1">Upload a new image or choose a preset to sync</p>
+              </div>
+            ) : (
+              <img
+                src={settings.backgroundImage}
+                alt="Current background"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="text-sm font-bold text-text-secondary">Image Link Broken or Missing</div>';
+                }}
+                style={{
+                  opacity: (settings.backgroundOpacity || 50) / 100,
+                  filter: `blur(${settings.backgroundBlur || 0}px)`,
+                }}
+              />
+            )}
           </div>
         </div>
       )}
@@ -437,7 +448,7 @@ export function CustomizeSettings({
             <div className="p-4 rounded-xl border-2 border-dashed border-border-card hover:border-accent/40 bg-bg-card/30 hover:bg-accent/5 transition-all text-center">
               <Upload size={24} className="mx-auto mb-2 text-accent" />
               <p className="text-sm font-semibold text-text-primary">Upload Image</p>
-              <p className="text-xs text-text-secondary mt-1">PNG, JPG or WebP</p>
+              <p className="text-[10px] text-text-secondary mt-1 italic">Note: Only stays on this PC</p>
             </div>
             <input
               type="file"
