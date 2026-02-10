@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -18,7 +19,7 @@ const removeCrossorigin = () => {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), removeCrossorigin()],
+  plugins: [react(), tailwindcss(), removeCrossorigin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -30,5 +31,19 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
-  }
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'redux-vendor': ['@reduxjs/toolkit', 'react-redux', 'redux-persist'],
+          'ui-vendor': ['framer-motion', 'lucide-react'],
+          'dnd-vendor': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', '@reduxjs/toolkit', 'react-redux'],
+  },
 })
