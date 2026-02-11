@@ -87,19 +87,19 @@ export function Overview({
         </div>
 
         {/* Most Visited Sites (Compact) */}
-        {topSites?.length > 0 && (
-          <div className="glass border border-border-card rounded-3xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-text-secondary">
-                <ExternalLink size={14} className="text-accent/60" /> Most Visited
-              </h2>
-              <button
-                onClick={onAddMostVisited}
-                className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-bold hover:bg-accent/20 transition-all"
-              >
-                + Add Site
-              </button>
-            </div>
+        <div className="glass border border-border-card rounded-3xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[11px] font-black uppercase tracking-wider flex items-center gap-2 text-text-secondary">
+              <ExternalLink size={14} className="text-accent/60" /> Most Visited
+            </h2>
+            <button
+              onClick={onAddMostVisited}
+              className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-bold hover:bg-accent/20 transition-all"
+            >
+              + Add Site
+            </button>
+          </div>
+          {topSites?.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {topSites.slice(0, 10).map((site: any, idx: number) => (
                 <div
@@ -155,8 +155,13 @@ export function Overview({
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-text-secondary opacity-50">
+              <ExternalLink size={32} className="mb-2 opacity-20" />
+              <p className="text-xs">No sites added yet</p>
+            </div>
+          )}
+        </div>
 
         {/* Last Visited Sites (Compact) */}
         {history?.length > 0 && (

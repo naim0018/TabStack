@@ -179,8 +179,21 @@ const App = () => {
           />
         }
         sidebarRight={
-          settings.activeSidebarItem !== "dashboard" ? (
-            (looseBookmarks.length > 0 || settings.activeSidebarItem !== "spaces") && (
+          settings.activeSidebarItem === "dashboard" ? (
+             <div className="flex flex-col gap-6">
+              <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm">
+                <ClockWidget
+                  now={now.getTime()}
+                  mode={settings.clockMode}
+                  onToggle={handleToggleClockMode}
+                />
+              </div>
+              <div className="glass border border-border-card rounded-3xl overflow-hidden backdrop-blur-md shadow-sm">
+                <Calendar />
+              </div>
+            </div>
+          ) : (
+             (looseBookmarks.length > 0 || settings.activeSidebarItem !== "spaces") ? (
               <SectionList
                 title="Quick Links"
                 items={looseBookmarks}
@@ -200,20 +213,7 @@ const App = () => {
                 }}
                 onItemDelete={(item: any) => deleteItem(item.id)}
               />
-            )
-          ) : (
-            <div className="flex flex-col gap-6">
-              <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm">
-                <ClockWidget
-                  now={now.getTime()}
-                  mode={settings.clockMode}
-                  onToggle={handleToggleClockMode}
-                />
-              </div>
-              <div className="glass border border-border-card rounded-3xl overflow-hidden backdrop-blur-md shadow-sm">
-                <Calendar />
-              </div>
-            </div>
+            ) : null
           )
         }
       >

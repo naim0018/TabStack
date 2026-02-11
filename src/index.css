@@ -59,8 +59,8 @@ body {
 
   /* Force global blur override for common utility classes to respect the slider */
   .backdrop-blur-md, .backdrop-blur-2xl, .backdrop-blur-xl, .backdrop-blur-lg {
-    backdrop-filter: blur(var(--card-blur, 16px)) !important;
-    -webkit-backdrop-filter: blur(var(--card-blur, 16px)) !important;
+    backdrop-filter: blur(var(--card-blur, 16px));
+    -webkit-backdrop-filter: blur(var(--card-blur, 16px));
   }
 }
 
@@ -76,8 +76,8 @@ body {
   /* Glassmorphism Effect - uses live --card-bg and --card-blur */
   .glass {
     background-color: var(--card-bg) !important;
-    backdrop-filter: blur(var(--card-blur, 16px)) !important;
-    -webkit-backdrop-filter: blur(var(--card-blur, 16px)) !important;
+    backdrop-filter: blur(var(--card-blur, 16px));
+    -webkit-backdrop-filter: blur(var(--card-blur, 16px));
     border: 1px solid var(--card-border);
     box-shadow: var(--shadow-md);
   }
@@ -106,8 +106,3 @@ body {
   }
 }
 
-/* Protect images and icons from global brightness adjustments */
-img, svg {
-  filter: brightness(calc(1 / var(--app-brightness, 1)));
-  will-change: filter;
-}

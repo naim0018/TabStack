@@ -60,16 +60,20 @@ export function SectionList({
     if (!items) return [];
     return searchQuery
       ? items.filter((i) =>
-          i.title.toLowerCase().includes(searchQuery.toLowerCase())
+          i.title.toLowerCase().includes(searchQuery.toLowerCase()),
         )
       : items;
   }, [items, searchQuery]);
 
-  if ((!filteredItems || filteredItems.length === 0) && searchQuery) return null;
+  if ((!filteredItems || filteredItems.length === 0) && searchQuery)
+    return null;
 
   const isCollapsed = settings.collapsedSections.includes(id);
 
-  const itemIds = useMemo(() => filteredItems.map(item => `${idPrefix}${item.id || item.title}`), [filteredItems, idPrefix]);
+  const itemIds = useMemo(
+    () => filteredItems.map((item) => `${idPrefix}${item.id || item.title}`),
+    [filteredItems, idPrefix],
+  );
 
   const content = (
     <div
@@ -87,17 +91,17 @@ export function SectionList({
         const rawId = String(item.id || item.title);
         const uniqueId = `${idPrefix}${rawId}`;
         const cardNode = (
-           <Card
-              item={item}
-              now={now}
-              isTab={isTabSection}
-              viewMode={isMasonry ? "list" : "grid"}
-              onClick={() => onItemClick(item)}
-              onEdit={() => onItemEdit(item)}
-              onDelete={() => onItemDelete(item)}
-              onClose={() => onItemClose?.(item)}
-              onDragStart={!isSortable ? (e) => onDragStart(e, rawId) : undefined}
-            />
+          <Card
+            item={item}
+            now={now}
+            isTab={isTabSection}
+            viewMode={isMasonry ? "list" : "grid"}
+            onClick={() => onItemClick(item)}
+            onEdit={() => onItemEdit(item)}
+            onDelete={() => onItemDelete(item)}
+            onClose={() => onItemClose?.(item)}
+            onDragStart={!isSortable ? (e) => onDragStart(e, rawId) : undefined}
+          />
         );
 
         if (isSortable) {
@@ -130,43 +134,55 @@ export function SectionList({
           isCollapsed ? "mb-0" : ""
         }`}
       >
-        <div 
+        <div
           className="flex items-center gap-2 cursor-pointer group/title"
           onClick={() => onToggleSection(id)}
         >
-           <div className={`p-1 rounded-md text-text-secondary group-hover/title:bg-border-card transition-all ${isCollapsed ? "-rotate-90" : ""}`}>
-             <ChevronDown size={14} />
-           </div>
-           <h3 className="text-[14px] font-bold text-text-primary/90 flex items-center gap-2 uppercase tracking-wide">
-             {title}
-             <span className="text-text-secondary text-[10px] font-bold opacity-30 ml-1 bg-border-card px-1.5 py-0.5 rounded-full">
-               {filteredItems.length}
-             </span>
-           </h3>
+          <div
+            className={`p-1 rounded-md text-text-secondary group-hover/title:bg-border-card transition-all ${isCollapsed ? "-rotate-90" : ""}`}
+          >
+            <ChevronDown size={14} />
+          </div>
+          <h3 className="text-[14px] font-bold text-text-primary/90 flex items-center gap-2 uppercase tracking-wide">
+            {title}
+            <span className="text-text-secondary text-[10px] font-bold opacity-30 ml-1 bg-border-card px-1.5 py-0.5 rounded-full">
+              {filteredItems.length}
+            </span>
+          </h3>
         </div>
 
         {dragListeners && (
-           <div 
-            {...dragListeners} 
+          <div
+            {...dragListeners}
             className="p-1.5 text-text-secondary/40 hover:text-text-secondary hover:bg-border-card rounded cursor-grab active:cursor-grabbing"
-           >
-             <GripVertical size={16} />
-           </div>
+          >
+            <GripVertical size={16} />
+          </div>
         )}
       </div>
 
-      {!isCollapsed && (
-         isSortable ? (
-            <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-              {content}
-            </SortableContext>
-         ) : content
-      )}
+      {!isCollapsed &&
+        (isSortable ? (
+          <SortableContext
+            items={itemIds}
+            strategy={verticalListSortingStrategy}
+          >
+            {content}
+          </SortableContext>
+        ) : (
+          content
+        ))}
     </div>
   );
 }
 
-function ChevronDown({ size, className }: { size: number; className?: string }) {
+function ChevronDown({
+  size,
+  className,
+}: {
+  size: number;
+  className?: string;
+}) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -368,6 +368,23 @@ export function useAppData() {
     if (isSettingsLoaded && !isProcessingSync.current) {
       chromeApi.saveSettings(settings);
     }
+    
+    // Sync CSS variables to root
+    const root = document.documentElement;
+    const opacity = (settings.cardOpacity ?? 60) / 100;
+    const cardBgColor = settings.cardBackgroundColor || (settings.theme === 'dark' ? '#1e293b' : '#ffffff');
+    const textColor = settings.textColor || (settings.theme === 'dark' ? '#e2e8f0' : '#0f172a');
+    const bgColor = settings.backgroundColor || (settings.theme === 'dark' ? '#1a1c23' : '#f8fafc');
+    const brightness = (settings.textBrightness ?? 100) / 100;
+
+    root.style.setProperty("--glass-opacity", String(opacity));
+    root.style.setProperty("--card-blur", `${settings.cardBlur ?? 16}px`);
+    root.style.setProperty("--card-bg-color", cardBgColor);
+    root.style.setProperty("--card-bg", `color-mix(in srgb, ${cardBgColor} calc(${opacity} * 100%), transparent)`);
+    root.style.setProperty("--text-primary", textColor);
+    root.style.setProperty("--bg-color", bgColor);
+    root.style.setProperty("--app-brightness", String(brightness));
+    
     document.body.setAttribute("data-theme", settings.theme);
   }, [settings, isSettingsLoaded]);
 
