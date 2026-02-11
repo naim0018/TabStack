@@ -58,11 +58,15 @@ body {
   }
 
   /* Force global blur override for common utility classes to respect the slider */
-  .backdrop-blur-md, .backdrop-blur-2xl, .backdrop-blur-xl, .backdrop-blur-lg {
-    backdrop-filter: blur(var(--card-blur, 16px));
-    -webkit-backdrop-filter: blur(var(--card-blur, 16px));
-  }
+/* Override Tailwind's internal backdrop variable */
+.backdrop-blur-sm,
+.backdrop-blur-md,
+.backdrop-blur-lg,
+.backdrop-blur-xl,
+.backdrop-blur-2xl {
+  --tw-backdrop-blur: blur(var(--card-blur, 16px)) !important;
 }
+
 
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
@@ -76,8 +80,8 @@ body {
   /* Glassmorphism Effect - uses live --card-bg and --card-blur */
   .glass {
     background-color: var(--card-bg) !important;
-    backdrop-filter: blur(var(--card-blur, 16px));
-    -webkit-backdrop-filter: blur(var(--card-blur, 16px));
+    backdrop-filter: blur(var(--card-blur, 16px)) !important;
+    -webkit-backdrop-filter: blur(var(--card-blur, 16px)) !important;
     border: 1px solid var(--card-border);
     box-shadow: var(--shadow-md);
   }
@@ -92,12 +96,12 @@ body {
     border-color: var(--accent);
   }
 
-  .glass-dock {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-  }
+.glass-dock {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(var(--card-blur, 16px)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--card-blur, 16px)) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
 
   [data-theme="light"] .glass-dock {
     background: rgba(255, 255, 255, 0.6);
@@ -106,3 +110,9 @@ body {
   }
 }
 
+/* Protect images and icons from global brightness adjustments */
+img, svg {
+  filter: brightness(calc(1 / var(--app-brightness, 1)));
+  will-change: filter;
+}
+}
