@@ -53,19 +53,14 @@ body {
   }
 
   body {
-    @apply bg-bg text-text-primary h-screen overflow-hidden transition-colors duration-300;
+    @apply bg-bg h-screen overflow-hidden transition-colors duration-300;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  }
-
-  /* Force ALL elements to use the primary text color by default for maximum readability */
-  *,
-  *::before,
-  *::after {
-    color: inherit;
-  }
-
-  h1, h2, h3, h4, h5, h6, p, span, a, li, td, th, label, div, input, textarea, select, button {
     color: var(--text-primary);
+  }
+
+  /* Base text color — elements inherit from body; use explicit Tailwind classes to override */
+  a {
+    color: inherit;
   }
 
   /* Force global blur override for common utility classes to respect the slider */
