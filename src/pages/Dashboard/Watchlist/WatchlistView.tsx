@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Eye, Plus, Trash2, Edit2, ExternalLink, Globe } from "lucide-react";
 import { BookmarkItem } from "@/types";
+import { GlassContainer } from "@/components/ui/GlassContainer";
 
 interface WatchlistViewProps {
   watchlist: BookmarkItem[];
@@ -68,7 +69,7 @@ export function WatchlistView({
   return (
     <div className="animate-in fade-in duration-500">
       <div className="flex flex-col gap-6">
-        <div className="glass border border-border-card rounded-3xl p-6">
+        <GlassContainer className="p-6">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-xl font-black flex items-center gap-3 text-text-primary">
@@ -175,7 +176,7 @@ export function WatchlistView({
               </button>
             </div>
           )}
-        </div>
+        </GlassContainer>
       </div>
     </div>
   );

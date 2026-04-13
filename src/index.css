@@ -49,12 +49,23 @@ body {
   }
 
   :root {
-    --text-secondary: #94a3b8;
+    --text-secondary: var(--text-primary);
   }
 
   body {
     @apply bg-bg text-text-primary h-screen overflow-hidden transition-colors duration-300;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Force ALL elements to use the primary text color by default for maximum readability */
+  *,
+  *::before,
+  *::after {
+    color: inherit;
+  }
+
+  h1, h2, h3, h4, h5, h6, p, span, a, li, td, th, label, div, input, textarea, select, button {
+    color: var(--text-primary);
   }
 
   /* Force global blur override for common utility classes to respect the slider */
@@ -96,10 +107,23 @@ body {
     border-color: var(--accent);
   }
 
+  .animate-spin-slow {
+    animation: spin 3s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
 .glass-dock {
   background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(var(--card-blur, 16px)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--card-blur, 16px)) saturate(180%);
+  backdrop-filter: blur(var(--card-blur, 16px));
+  -webkit-backdrop-filter: blur(var(--card-blur, 16px)) ;
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 

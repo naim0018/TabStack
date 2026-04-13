@@ -11,6 +11,7 @@ interface UseAppHandlersProps {
   tabStackFolderId: string | null;
   notesFolderId: string | null;
   remindersFolderId: string | null;
+  plansFolderId: string | null;
   quickLinksFolderId: string | null;
   watchlistFolderId: string | null;
   mostVisitedFolderId: string | null;
@@ -28,6 +29,7 @@ export function useAppHandlers({
   tabStackFolderId,
   notesFolderId,
   remindersFolderId,
+  plansFolderId,
   quickLinksFolderId,
   watchlistFolderId,
   mostVisitedFolderId,
@@ -215,6 +217,8 @@ export function useAppHandlers({
             ? notesFolderId || "1"
             : type === "reminder"
             ? remindersFolderId || "1"
+            : type === "plan"
+            ? plansFolderId || "1"
             : type === "quicklink"
             ? quickLinksFolderId || "1"
             : type === "watchlist" || settings.activeSidebarItem === "watchlist"
@@ -230,7 +234,7 @@ export function useAppHandlers({
         };
 
         const baseUrl =
-          url || (type === "reminder" || type === "note" ? "about:blank" : "");
+          url || (type === "reminder" || type === "note" || type === "plan" ? "about:blank" : "");
         if (type !== "folder") {
           createParams.url = encodeMetaToUrl(baseUrl, metaToSave);
         }
@@ -260,6 +264,8 @@ export function useAppHandlers({
             await chromeApi.moveBookmark(id, { parentId: notesFolderId! });
           } else if (type === "reminder" && node.parentId !== remindersFolderId) {
             await chromeApi.moveBookmark(id, { parentId: remindersFolderId! });
+          } else if (type === "plan" && node.parentId !== plansFolderId) {
+            await chromeApi.moveBookmark(id, { parentId: plansFolderId! });
           } else if (type === "watchlist" && node.parentId !== watchlistFolderId) {
             await chromeApi.moveBookmark(id, { parentId: watchlistFolderId! });
           } else if (type === "mostvisited" && node.parentId !== mostVisitedFolderId) {

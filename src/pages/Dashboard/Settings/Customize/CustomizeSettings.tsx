@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ImagePlus, Upload, X, RefreshCw, Eye, Palette, Sliders, Type } from 'lucide-react';
 import { Settings } from '@/types';
+import { GlassContainer } from '@/components/ui/GlassContainer';
 
 interface CustomizeSettingsProps {
   settings: Settings;
@@ -122,7 +123,7 @@ export function CustomizeSettings({
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-3xl font-black text-text-primary tracking-tight flex items-center gap-3">
+        <h2 className="text-3xl font-semibold text-text-primary tracking-tight flex items-center gap-3">
           <Palette className="text-accent" size={32} />
           Customize
         </h2>
@@ -132,7 +133,7 @@ export function CustomizeSettings({
       </div>
 
       {/* Sync & Backup Section */}
-      <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-6">
+      <GlassContainer className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <RefreshCw size={24} className="text-accent animate-spin-slow" />
@@ -189,11 +190,11 @@ export function CustomizeSettings({
                 Tip: If your notes aren't appearing on another PC, click "Force Metadata Repair" to re-encode all data into your bookmarks.
             </p>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* Current Background Preview */}
       {settings.backgroundImage && (
-        <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm">
+        <GlassContainer className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
               <Eye size={20} className="text-accent" />
@@ -229,11 +230,11 @@ export function CustomizeSettings({
               />
             )}
           </div>
-        </div>
+        </GlassContainer>
       )}
 
       {/* Wallpaper Adjustments */}
-      <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-6">
+      <GlassContainer className="p-6 space-y-6">
         <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
             <Palette size={20} className="text-accent" />
             Background Adjustments
@@ -243,9 +244,9 @@ export function CustomizeSettings({
             {/* Opacity Slider */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-text-secondary">
+                <h2 className="text-sm font-semibold ">
                   Wallpaper Visibility (Opacity)
-                </label>
+                </h2>
                 <span className="text-sm font-bold text-accent">
                   {settings.backgroundOpacity || 50}%
                 </span>
@@ -263,9 +264,9 @@ export function CustomizeSettings({
             {/* Blur Slider */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-text-secondary">
+                <h2 className="text-sm font-semibold">
                   Wallpaper Blur
-                </label>
+                </h2>
                 <span className="text-sm font-bold text-accent">
                   {settings.backgroundBlur || 0}px
                 </span>
@@ -280,10 +281,10 @@ export function CustomizeSettings({
               />
             </div>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* Interface Adjustments */}
-      <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-6">
+      <GlassContainer className="p-6 space-y-6">
         <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
             <Sliders size={20} className="text-accent" />
             Card Appearance
@@ -293,9 +294,9 @@ export function CustomizeSettings({
             {/* Card Opacity */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-text-secondary">
+                <h2 className="text-sm font-semibold">
                   Card Background Opacity
-                </label>
+                </h2>
                 <span className="text-sm font-bold text-accent">
                   {settings.cardOpacity || 60}%
                 </span>
@@ -314,9 +315,9 @@ export function CustomizeSettings({
             {/* Card Blur */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-text-secondary">
+                <h2 className="text-sm font-semibold">
                   Card Background Blur
-                </label>
+                </h2>
                 <span className="text-sm font-bold text-accent">
                   {settings.cardBlur ?? 16}px
                 </span>
@@ -334,9 +335,9 @@ export function CustomizeSettings({
 
             {/* Card Background Color */}
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-text-secondary block">
+              <h2 className="text-sm font-semibold">
                 Card Accent Color
-              </label>
+              </h2>
               <div className="flex items-center gap-4">
                 <input
                   type="color"
@@ -357,10 +358,10 @@ export function CustomizeSettings({
               <p className="text-[10px] text-text-secondary font-medium">Base color for cards (combined with opacity)</p>
             </div>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* Typography & Colors */}
-      <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-6">
+      <GlassContainer className="p-6 space-y-6">
         <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
             <Type size={20} className="text-accent" />
             Typography & Colors
@@ -370,9 +371,9 @@ export function CustomizeSettings({
             {/* Text Brightness */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-text-secondary">
+                <h2 className="text-sm font-semibold">
                   General Text Brightness
-                </label>
+                </h2>
                 <span className="text-sm font-bold text-accent">
                   {settings.textBrightness || 100}%
                 </span>
@@ -390,9 +391,9 @@ export function CustomizeSettings({
 
             {/* Text Color */}
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-text-secondary block">
+              <h2 className="text-sm font-semibold">
                 Primary Text Color
-              </label>
+              </h2>
               <div className="flex items-center gap-4">
                 <input
                   type="color"
@@ -414,9 +415,9 @@ export function CustomizeSettings({
 
             {/* Background Color */}
             <div className="space-y-3">
-              <label className="text-sm font-semibold text-text-secondary block">
+              <h2 className="text-sm font-semibold">
                 Main Background Color
-              </label>
+              </h2>
               <div className="flex items-center gap-4">
                 <input
                   type="color"
@@ -436,10 +437,10 @@ export function CustomizeSettings({
               </div>
             </div>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* Upload Options */}
-      <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-4">
+      <GlassContainer className="p-6 space-y-4">
         <h3 className="text-lg font-bold text-text-primary">Upload Custom Wallpaper</h3>
         
         <div className="flex gap-3">
@@ -499,10 +500,10 @@ export function CustomizeSettings({
             )}
           </div>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* Preset Backgrounds */}
-      <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm">
+      <GlassContainer className="p-6">
         <h3 className="text-lg font-bold text-text-primary mb-4">Preset Wallpapers</h3>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -534,7 +535,7 @@ export function CustomizeSettings({
             </button>
           ))}
         </div>
-      </div>
+      </GlassContainer>
     </div>
   );
 }

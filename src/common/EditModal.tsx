@@ -1,22 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '../components/ui/Modal';
-import { Save, X } from 'lucide-react';
+import { Save, X, Trash2 } from 'lucide-react';
 
 export interface EditModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: EditData) => void;
   initialData?: EditData | null;
-  forceType?: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | 'watchlist' | 'mostvisited' | null;
+  forceType?: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | 'watchlist' | 'mostvisited' | 'plan' | null;
 }
 
 export interface EditData {
   id?: string;
   title: string;
   url?: string;
-  type: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | 'watchlist' | 'mostvisited';
+  type: 'bookmark' | 'folder' | 'reminder' | 'note' | 'quicklink' | 'watchlist' | 'mostvisited' | 'plan';
   description?: string;
   deadline?: string;
+  completedAt?: number;
 }
 
 export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: EditModalProps) {
@@ -35,15 +36,16 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
           id: initialData.id,
           title: initialData.title || '',
           url: initialData.url || '',
-          type: initialData.type || forceType || 'bookmark',
+          type: initialData.type || (forceType as any) || 'bookmark',
           description: initialData.description || '',
           deadline: initialData.deadline || '',
+          completedAt: initialData.completedAt,
         });
       } else {
         setFormData({
           title: '',
           url: '',
-          type: forceType || 'bookmark',
+          type: (forceType as any) || 'bookmark',
           description: '',
           deadline: '',
         });
@@ -51,24 +53,24 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
     }
   }, [isOpen, initialData, forceType]);
 
-  const inputClasses = "w-full px-4 py-3 rounded-xl bg-bg border border-border-card text-text-primary text-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent/10 transition-all placeholder:text-text-secondary/50";
-  const labelClasses = "text-[12px] font-bold text-text-secondary uppercase tracking-widest mb-1.5 ml-1 flex justify-between";
+  const inputClasses = "w-full px-5 py-3.5 rounded-lg bg-[#0f1115]/50 border border-white/5 text-white text-sm outline-none focus:border-accent/40 focus:bg-[#0f1115]/80 transition-all placeholder:text-white/20";
+  const labelClasses = "text-[11px] font-semibold text-white/40 uppercase tracking-[0.1em] mb-2.5 ml-0.5 flex justify-between";
+
+  const isPlan = formData.type === 'plan';
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={initialData ? 'Edit Item' : 'New Item'}
+      title={initialData ? (isPlan ? 'Edit Plan' : 'Edit Item') : (isPlan ? 'Create New Plan' : 'New Item')}
       maxWidth="max-w-lg"
     >
-      <div className="flex flex-col gap-6">
-        <div className="space-y-5">
+      <div className="flex flex-col gap-8">
+        <div className="space-y-6">
           {/* Type Select */}
           {!forceType && !initialData && (
             <div className="flex flex-col">
-              <label className={labelClasses}>
-                Identify As
-              </label>
+              <label className={labelClasses}>Identify As</label>
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
@@ -77,6 +79,7 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
                 <option value="bookmark">Bookmark</option>
                 <option value="folder">Folder</option>
                 <option value="reminder">Reminder</option>
+                <option value="plan">Daily Plan</option>
                 <option value="note">Note</option>
                 <option value="watchlist">Watchlist Item</option>
               </select>
@@ -85,9 +88,7 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
 
           {/* Title */}
           <div className="flex flex-col">
-            <label className={labelClasses}>
-              Title
-            </label>
+            <label className={labelClasses}>Title</label>
             <input
               type="text"
               placeholder="Enter title..."
@@ -98,7 +99,7 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
           </div>
 
           {/* URL */}
-          {formData.type !== 'folder' && formData.type !== 'note' && (
+          {formData.type !== 'folder' && formData.type !== 'note' && formData.type !== 'plan' && (
             <div className="flex flex-col">
               <label className={labelClasses}>
                 {formData.type === 'reminder' ? 'URL (Optional)' : 'URL'}
@@ -113,13 +114,13 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
             </div>
           )}
 
-          {/* Description */}
+          {/* Description / Notes */}
           <div className="flex flex-col">
             <label className={labelClasses}>
-              {formData.type === 'note' ? 'Content' : 'Description (Optional)'}
+              {formData.type === 'note' ? 'Content' : (formData.type === 'plan' ? 'Notes (Optional)' : 'Description (Optional)')}
             </label>
             <textarea
-              rows={formData.type === 'note' ? 8 : 3}
+              rows={formData.type === 'note' ? 10 : 4}
               placeholder={formData.type === 'note' ? 'Write your note here...' : 'Add some notes...'}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -127,36 +128,37 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
             />
           </div>
 
-          {/* Deadline */}
-          {formData.type === 'reminder' && (
+          {/* Deadline / Time */}
+          {(formData.type === 'reminder' || formData.type === 'plan') && (
             <div className="flex flex-col">
-              <label className={labelClasses}>
-                Deadline
-              </label>
-              <input
-                type="datetime-local"
-                value={formData.deadline}
-                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                className={inputClasses}
-              />
+              <label className={labelClasses}>{isPlan ? 'Scheduled Time' : 'Deadline'}</label>
+              <div className="relative group">
+                <input
+                  type={isPlan ? "time" : "datetime-local"}
+                  value={formData.deadline}
+                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                  className={inputClasses}
+                />
+              </div>
             </div>
           )}
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-2 border-t border-card-border/50">
+        <div className="flex justify-between items-center gap-4 pt-4 border-t border-white/5">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-text-secondary hover:bg-card-border hover:text-text-primary transition-all active:scale-95 flex items-center gap-2"
+            className="flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-white/5 transition-all active:scale-95"
           >
-            <X size={18} />
+            <X size={16} />
             Cancel
           </button>
+          
           <button
             onClick={() => onSave(formData)}
-            className="px-6 py-2.5 rounded-xl bg-accent text-white font-bold text-sm shadow-xl shadow-accent/20 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2"
+            className="flex items-center gap-2.5 px-7 py-3 rounded-lg bg-linear-to-r from-accent to-accent/80 text-white font-semibold text-sm shadow-[0_8px_20px_-4px_rgba(56,189,248,0.4)] hover:brightness-110 hover:shadow-[0_12px_24px_-4px_rgba(56,189,248,0.5)] active:scale-[0.98] transition-all"
           >
-            <Save size={18} />
+            <Save size={18} className="drop-shadow-sm" />
             Save Changes
           </button>
         </div>
@@ -164,3 +166,4 @@ export function EditModal({ isOpen, onClose, onSave, initialData, forceType }: E
     </Modal>
   );
 }
+

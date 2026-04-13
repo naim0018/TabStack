@@ -30,31 +30,36 @@ export function Modal({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="fixed inset-0 z-10000 bg-black/60 backdrop-blur-sm"
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                className="fixed inset-0 z-10000 bg-black/40 backdrop-blur-md"
               />
             </Dialog.Overlay>
             <div className="fixed inset-0 z-10001 flex items-center justify-center p-4">
               <Dialog.Content asChild>
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  initial={{ opacity: 0, scale: 0.9, y: 30 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                  className={`glass w-full ${maxWidth} rounded-3xl shadow-2xl overflow-hidden focus:outline-none flex flex-col`}
+                  exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                  transition={{ 
+                    type: "spring",
+                    damping: 25,
+                    stiffness: 300,
+                    mass: 0.8
+                  }}
+                  className={`glass w-full ${maxWidth} rounded-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden focus:outline-none flex flex-col border border-white/10`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   {(title || showCloseButton) && (
-                    <div className="px-6 py-4 flex items-center justify-between border-b border-card-border">
+                    <div className="px-6 py-5 flex items-center justify-between border-b border-white/10">
                       {title && (
-                        <Dialog.Title className="text-xl font-bold tracking-tight text-text-primary">
+                        <Dialog.Title className="text-xl font-semibold tracking-tight text-white/90">
                           {title}
                         </Dialog.Title>
                       )}
                       {showCloseButton && (
                         <Dialog.Close asChild>
                           <button
-                            className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-card-border transition-all active:scale-90"
+                            className="p-1 px-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-95"
                             aria-label="Close"
                           >
                             <X size={20} />
@@ -63,7 +68,7 @@ export function Modal({
                       )}
                     </div>
                   )}
-                  <div className="p-6 overflow-y-auto no-scrollbar">
+                  <div className="p-7 overflow-y-auto no-scrollbar">
                     {children}
                   </div>
                 </motion.div>
@@ -75,3 +80,4 @@ export function Modal({
     </AnimatePresence>
   );
 }
+

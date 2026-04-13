@@ -109,13 +109,13 @@ export const Clock: React.FC<ClockProps> = ({ now, mode, onToggle }) => {
       onClick={onToggle}
       className="w-[200px] h-[200px] mx-auto flex flex-col items-center justify-center cursor-pointer group transition-all duration-500 ease-in-out"
     >
-      <div className="text-3xl font-black text-text-primary tracking-tighter group-hover:scale-105 transition-transform font-mono">
+      <div className="text-3xl font-semibold text-text-primary tracking-tighter group-hover:scale-105 transition-transform font-mono">
         {timeStr}
       </div>
       <div className="text-xs font-bold text-accent uppercase tracking-widest mt-2 opacity-80">
         {dateStr}
       </div>
-      <div className="mt-3 text-[10px] uppercase font-black tracking-widest text-text-secondary/30 flex items-center gap-2">
+      <div className="mt-3 text-[10px] uppercase font-semibold tracking-widest text-text-secondary/30 flex items-center gap-2">
         <ClockIcon size={12} /> Click to Switch to Analog
       </div>
     </div>
@@ -162,7 +162,7 @@ export const Calendar: React.FC = () => {
   };
 
   return (
-    <div className="glass mx-auto p-4 bg-bg-card border border-border-card rounded-2xl shadow-sm">
+    <div className="glass mx-auto p-4 bg-bg-card border border-border-card rounded-lg shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-text-primary uppercase tracking-tight flex items-center gap-2">
           <CalendarIcon size={20} className="text-accent" />
@@ -220,7 +220,7 @@ export const Calendar: React.FC = () => {
           onClick={() =>
             setViewDate(new Date(now.getFullYear(), now.getMonth(), 1))
           }
-          className="mt-3 w-full py-1.5 text-[10px] uppercase font-black tracking-widest text-accent hover:bg-accent/5 rounded-lg transition-colors"
+          className="mt-3 w-full py-1.5 text-[10px] uppercase font-semibold tracking-widest text-accent hover:bg-accent/5 rounded-lg transition-colors"
         >
           Return to Today
         </button>

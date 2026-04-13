@@ -13,11 +13,16 @@ import { BookmarksView } from "@/pages/Dashboard/Bookmarks/BookmarksView";
 import { WatchlistView } from "@/pages/Dashboard/Watchlist/WatchlistView";
 import { CustomizeSettings } from "@/pages/Dashboard/Settings/Customize/CustomizeSettings";
 import { SectionList } from "@/common/SectionList";
-import { Clock as ClockWidget, Calendar } from "@/pages/Dashboard/Overview/Components/Widgets";
+import {
+  Clock as ClockWidget,
+  Calendar,
+} from "@/pages/Dashboard/Overview/Components/Widgets";
+import { Plus, Edit2, Trash2 } from "lucide-react";
 
 import { useAppData } from "@/hooks/useAppData";
 import { useAppHandlers } from "@/hooks/useAppHandlers";
-import { getCleanUrlFromUrl } from "@/utils/metadata";
+import { getCleanUrlFromUrl, encodeMetaToUrl } from "@/utils/metadata";
+import { GlassContainer } from "@/components/ui/GlassContainer";
 
 const App = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,6 +40,7 @@ const App = () => {
     looseBookmarks,
     allBookmarks,
     reminders,
+    plans,
     notes,
     quickLinksData,
     watchlistData,
@@ -43,6 +49,7 @@ const App = () => {
     tabStackFolderId,
     notesFolderId,
     remindersFolderId,
+    plansFolderId,
     quickLinksFolderId,
     watchlistFolderId,
     mostVisitedFolderId,
@@ -76,6 +83,7 @@ const App = () => {
     tabStackFolderId,
     notesFolderId,
     remindersFolderId,
+    plansFolderId,
     quickLinksFolderId,
     watchlistFolderId,
     mostVisitedFolderId,
@@ -180,20 +188,19 @@ const App = () => {
         }
         sidebarRight={
           settings.activeSidebarItem === "dashboard" ? (
-             <div className="flex flex-col gap-6">
-              <div className="glass border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm">
+            <div className="flex flex-col gap-6">
+              <GlassContainer className="p-6">
                 <ClockWidget
                   now={now.getTime()}
                   mode={settings.clockMode}
                   onToggle={handleToggleClockMode}
                 />
-              </div>
-              <div className="glass border border-border-card rounded-3xl overflow-hidden backdrop-blur-md shadow-sm">
+              </GlassContainer>
+              <GlassContainer className="overflow-hidden">
                 <Calendar />
-              </div>
+              </GlassContainer>
             </div>
-          ) : (
-             (looseBookmarks.length > 0 || settings.activeSidebarItem !== "spaces") ? (
+          ) : settings.activeSidebarItem === "bookmarks" && looseBookmarks.length > 0 ? (
               <SectionList
                 title="Quick Links"
                 items={looseBookmarks}
@@ -213,16 +220,114 @@ const App = () => {
                 }}
                 onItemDelete={(item: any) => deleteItem(item.id)}
               />
-            ) : null
-          )
+          ) : null
+        }
+        bottomDock={
+          settings.activeSidebarItem !== "customize" ? (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+              <div className="glass-dock border border-white/10 rounded-xl p-2 px-4 flex items-center gap-3 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:scale-105 transition-all duration-500">
+                {/* Quick Links */}
+                {quickLinksData.map((link: any) => (
+                  <div key={link.id} className="relative group/ql">
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center gap-1 group"
+                    >
+                      <div className="w-14 h-14 rounded-[1.2rem] bg-linear-to-br from-white/10 to-white/5 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-sm border border-white/5 overflow-hidden">
+                        <img
+                          src={`https://www.google.com/s2/favicons?domain=${link.url || ""}&sz=128`}
+                          alt={link.title}
+                          className="w-10 h-10 object-contain drop-shadow-md"
+                        />
+                      </div>
+                      {/* Tooltip on hover */}
+                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-black/80 backdrop-blur-md text-white text-[10px] font-bold opacity-0 group-hover/ql:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-white/10 translate-y-2 group-hover/ql:translate-y-0 duration-300">
+                        {link.title}
+                      </div>
+                    </a>
+
+                    {/* Quick Actions */}
+                    <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover/ql:opacity-100 transition-opacity scale-75 group-hover/ql:scale-100 duration-300">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModalInitialData({
+                            ...link,
+                            url: getCleanUrlFromUrl(link.url),
+                            type: "quicklink" as any,
+                          });
+                          setModalForceType("bookmark");
+                          setIsModalOpen(true);
+                        }}
+                        className="p-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-accent transition-colors shadow-lg"
+                      >
+                        <Edit2 size={10} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteItem(link.id);
+                        }}
+                        className="p-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-red-500 transition-colors shadow-lg"
+                      >
+                        <Trash2 size={10} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Divider if we have custom links */}
+                {quickLinksData.length > 0 && (
+                  <div className="w-px h-10 bg-white/10 mx-1 self-center" />
+                )}
+
+                {/* Fallback to Top Sites if empty */}
+                {quickLinksData.length === 0 && mostVisitedData.slice(0, 5).map((site: any, idx: number) => (
+                  <div key={idx} className="relative group/ql">
+                    <a
+                      href={site.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center gap-1 group"
+                    >
+                      <div className="w-14 h-14 rounded-[1.2rem] bg-linear-to-br from-white/10 to-white/5 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-sm border border-white/5 overflow-hidden">
+                        <img
+                          src={`https://www.google.com/s2/favicons?domain=${site.url || ""}&sz=128`}
+                          alt={site.title}
+                          className="w-10 h-10 object-contain drop-shadow-md opacity-70 group-hover:opacity-100"
+                        />
+                      </div>
+                    </a>
+                  </div>
+                ))}
+
+                {/* Add Link Button */}
+                <button
+                  onClick={() => {
+                    setModalForceType("bookmark");
+                    setModalInitialData({
+                      id: "",
+                      title: "",
+                      url: "",
+                      type: "quicklink" as any,
+                    });
+                    setIsModalOpen(true);
+                  }}
+                  className="w-14 h-14 rounded-[1.2rem] bg-white/10 flex items-center justify-center hover:bg-accent/20 transition-all duration-300 group border border-dashed border-white/20 hover:border-accent/50"
+                >
+                  <Plus size={24} className="text-white opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all" />
+                </button>
+              </div>
+            </div>
+          ) : null
         }
       >
         {settings.activeSidebarItem === "dashboard" ? (
           <Overview
-            settings={settings}
-            onToggleClockMode={handleToggleClockMode}
             reminders={reminders}
-            quickLinks={quickLinksData}
+            plans={plans}
             now={now.getTime()}
             topSites={mostVisitedData}
             history={history}
@@ -234,59 +339,70 @@ const App = () => {
             onEditReminder={(r) => {
               setModalInitialData({
                 ...r,
-                url: getCleanUrlFromUrl(r.url),
+                url: r.url ? getCleanUrlFromUrl(r.url) : "about:blank",
                 type: "reminder",
               });
               setModalForceType("reminder");
               setIsModalOpen(true);
             }}
             onDeleteReminder={(id) => deleteItem(id)}
-            onAddQuickLink={() => {
-              setModalForceType("bookmark");
-              setModalInitialData({
-                id: "",
-                title: "",
-                url: "",
-                type: "quicklink" as any,
-              });
-              setIsModalOpen(true);
+            onCreatePlan={() => {
+                setModalForceType("plan");
+                setModalInitialData(null);
+                setIsModalOpen(true);
             }}
-            onEditQuickLink={(link) => {
-              setModalInitialData({
-                ...link,
-                url: getCleanUrlFromUrl(link.url),
-                type: "quicklink" as any,
-              });
-              setModalForceType("bookmark");
-              setIsModalOpen(true);
+            onEditPlan={(p) => {
+                setModalInitialData({
+                    ...p,
+                    url: "about:blank",
+                    type: "plan",
+                });
+                setModalForceType("plan");
+                setIsModalOpen(true);
             }}
-            onDeleteQuickLink={(id) => deleteItem(id)}
+            onTogglePlan={async (plan) => {
+                const isCompleted = plan.completedAt;
+                const metaToSave = { 
+                    description: plan.description, 
+                    deadline: plan.deadline, 
+                    type: "plan",
+                    completedAt: isCompleted ? null : Date.now() 
+                };
+                try {
+                    const newUrl = encodeMetaToUrl("about:blank", metaToSave);
+                    await chromeApi.updateBookmark(plan.id, { url: newUrl });
+                    const newMeta = { ...metadata, [plan.id]: metaToSave };
+                    await chromeApi.saveMetadata(newMeta);
+                    setMetadata(newMeta);
+                    refreshData();
+                } catch (e) {
+                    console.error("Toggle plan failed", e);
+                }
+            }}
+            onDeletePlan={(id) => deleteItem(id)}
             onAddMostVisited={() => {
-              setModalForceType("mostvisited");
-              setModalInitialData({
-                id: "",
-                title: "",
-                url: "",
-                type: "mostvisited",
-              });
-              setIsModalOpen(true);
-            }}
-            onEditMostVisited={(site) => {
-              setModalInitialData({
-                ...site,
-                url: getCleanUrlFromUrl(site.url),
-                type: "mostvisited",
-              });
-              setModalForceType("mostvisited");
-              setIsModalOpen(true);
-            }}
-            onDeleteMostVisited={(id) => deleteItem(id)}
+                setModalForceType("mostvisited");
+                setModalInitialData({
+                  id: "",
+                  title: "",
+                  url: "",
+                  type: "mostvisited",
+                });
+                setIsModalOpen(true);
+              }}
+              onEditMostVisited={(site) => {
+                setModalInitialData({
+                  ...site,
+                  url: getCleanUrlFromUrl(site.url),
+                  type: "mostvisited",
+                });
+                setModalForceType("mostvisited");
+                setIsModalOpen(true);
+              }}
+              onDeleteMostVisited={(id) => deleteItem(id)}
           />
         ) : settings.activeSidebarItem === "spaces" ? (
-          <SpacesView
-            settings={settings}
-            setSettings={setSettings}
-          />
+          <SpacesView settings={settings} setSettings={setSettings} />
         ) : settings.activeSidebarItem === "notes" ? (
           <NotesView
             notes={notes}
@@ -301,7 +417,7 @@ const App = () => {
               setModalInitialData({
                 ...n,
                 url: getCleanUrlFromUrl(n.url),
-                type: "note"
+                type: "note",
               });
               setModalForceType("note");
               setIsModalOpen(true);
@@ -322,7 +438,7 @@ const App = () => {
               setModalInitialData({
                 ...r,
                 url: getCleanUrlFromUrl(r.url),
-                type: "reminder"
+                type: "reminder",
               });
               setModalForceType("reminder");
               setIsModalOpen(true);
@@ -380,7 +496,7 @@ const App = () => {
               setModalForceType(null);
               setModalInitialData({
                 ...item,
-                url: getCleanUrlFromUrl(item.url)
+                url: getCleanUrlFromUrl(item.url),
               });
               setIsModalOpen(true);
             }}
@@ -395,9 +511,7 @@ const App = () => {
               setSettings((s) => ({
                 ...s,
                 gridMode:
-                  s.gridMode === "horizontal"
-                    ? "vertical"
-                    : "horizontal",
+                  s.gridMode === "horizontal" ? "vertical" : "horizontal",
               }))
             }
             onToggleAllSections={(collapse) => {

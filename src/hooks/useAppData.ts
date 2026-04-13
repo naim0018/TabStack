@@ -18,6 +18,7 @@ export function useAppData() {
   const [tabStackFolderId, setTabStackFolderId] = useState<string | null>(null);
   const [notesFolderId, setNotesFolderId] = useState<string | null>(null);
   const [remindersFolderId, setRemindersFolderId] = useState<string | null>(null);
+  const [plansFolderId, setPlansFolderId] = useState<string | null>(null);
   const [quickLinksFolderId, setQuickLinksFolderId] = useState<string | null>(null);
   const [watchlistFolderId, setWatchlistFolderId] = useState<string | null>(null);
   const [mostVisitedFolderId, setMostVisitedFolderId] = useState<string | null>(null);
@@ -142,6 +143,22 @@ export function useAppData() {
         }
       }
       setRemindersFolderId(remFolderNode.id);
+      
+      // Plans
+      let plansFolderNode = findFolder(
+        tsParent.children || [],
+        "DailyPlans",
+        tsParent.id
+      );
+      if (!plansFolderNode) {
+        isMoving.current = true;
+        plansFolderNode = await chromeApi.createBookmark({
+          parentId: tsParent.id,
+          title: "DailyPlans",
+        });
+        isMoving.current = false;
+      }
+      setPlansFolderId(plansFolderNode.id);
 
       // QuickLinks
       let qlFolderNode = findFolder(tr, "QuickLinks", "1");
@@ -266,6 +283,7 @@ export function useAppData() {
               !node.url &&
               node.id !== notesFolderNode?.id &&
               node.id !== remFolderNode?.id &&
+              node.id !== plansFolderNode?.id &&
               node.id !== wlFolderNode?.id &&
               node.id !== mvFolderNode?.id
           )
@@ -498,6 +516,34 @@ export function useAppData() {
       });
   }, [metadata, tree, remindersFolderId]);
 
+  const plans = useMemo(() => {
+    if (!plansFolderId || !tree || tree.length === 0) return [];
+    const findFolderNode = (nodes: any[]): any => {
+      for (let n of nodes) {
+        if (n.id === plansFolderId) return n;
+        if (n.children) {
+          const f = findFolderNode(n.children);
+          if (f) return f;
+        }
+      }
+      return null;
+    };
+    const folder = findFolderNode(tree);
+    if (!folder || !folder.children) return [];
+    return folder.children
+      .map((n: any) => {
+        const enriched = enrichItem(n, metadata);
+        if (!enriched.type) enriched.type = "plan";
+        return enriched;
+      })
+      .filter((n: any) => n.type === "plan")
+      .sort((a: any, b: any) => {
+        const ta = a.deadline || "00:00";
+        const tb = b.deadline || "00:00";
+        return ta.localeCompare(tb);
+      });
+  }, [metadata, tree, plansFolderId]);
+
   const notes = useMemo(() => {
     if (!notesFolderId || !tree || tree.length === 0) return [];
     const findFolder = (nodes: any[]): any => {
@@ -585,6 +631,7 @@ export function useAppData() {
     looseBookmarks,
     allBookmarks,
     reminders,
+    plans,
     notes,
     quickLinksData,
     watchlistData,
@@ -594,6 +641,7 @@ export function useAppData() {
     tabStackFolderId,
     notesFolderId,
     remindersFolderId,
+    plansFolderId,
     quickLinksFolderId,
     watchlistFolderId,
     mostVisitedFolderId,

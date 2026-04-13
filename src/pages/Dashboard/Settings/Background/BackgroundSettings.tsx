@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ImagePlus, Upload, X, RefreshCw, Eye } from 'lucide-react';
 import { Settings } from '@/types';
+import { GlassContainer } from '@/components/ui/GlassContainer';
 
 interface BackgroundSettingsProps {
   settings: Settings;
@@ -87,7 +88,7 @@ export function BackgroundSettings({ settings, setSettings }: BackgroundSettings
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-3xl font-black text-text-primary tracking-tight flex items-center gap-3">
+        <h2 className="text-3xl font-semibold text-text-primary tracking-tight flex items-center gap-3">
           <ImagePlus className="text-accent" size={32} />
           Background Settings
         </h2>
@@ -98,7 +99,7 @@ export function BackgroundSettings({ settings, setSettings }: BackgroundSettings
 
       {/* Current Background Preview */}
       {settings.backgroundImage && (
-        <div className="glass bg-bg-card/50 border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm">
+        <GlassContainer className="bg-bg-card/50 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
               <Eye size={20} className="text-accent" />
@@ -123,11 +124,11 @@ export function BackgroundSettings({ settings, setSettings }: BackgroundSettings
               }}
             />
           </div>
-        </div>
+        </GlassContainer>
       )}
 
       {/* Opacity & Blur Controls */}
-      <div className="glass bg-bg-card/50 border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-6">
+      <GlassContainer className="bg-bg-card/50 p-6 space-y-6">
         <h3 className="text-lg font-bold text-text-primary">Adjustments</h3>
         
         {/* Opacity Slider */}
@@ -169,10 +170,10 @@ export function BackgroundSettings({ settings, setSettings }: BackgroundSettings
             className="w-full h-2 bg-border-card rounded-full appearance-none cursor-pointer accent-accent"
           />
         </div>
-      </div>
+      </GlassContainer>
 
       {/* Upload Options */}
-      <div className="glass bg-bg-card/50 border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm space-y-4">
+      <GlassContainer className="bg-bg-card/50 p-6 space-y-4">
         <h3 className="text-lg font-bold text-text-primary">Upload Custom Background</h3>
         
         <div className="flex gap-3">
@@ -232,10 +233,10 @@ export function BackgroundSettings({ settings, setSettings }: BackgroundSettings
             )}
           </div>
         </div>
-      </div>
+      </GlassContainer>
 
       {/* Preset Backgrounds */}
-      <div className="glass bg-bg-card/50 border border-border-card rounded-3xl p-6 backdrop-blur-md shadow-sm">
+      <GlassContainer className="bg-bg-card/50 p-6">
         <h3 className="text-lg font-bold text-text-primary mb-4">Preset Backgrounds</h3>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -267,7 +268,7 @@ export function BackgroundSettings({ settings, setSettings }: BackgroundSettings
             </button>
           ))}
         </div>
-      </div>
+      </GlassContainer>
     </div>
   );
 }

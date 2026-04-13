@@ -1,9 +1,24 @@
-import React from 'react';
-import { LayoutGrid, Plus, Moon, Sun, ChevronLeft, ChevronRight, Folder, FileText, Bell, Trash2, Edit2, LayoutDashboard, Palette, Eye } from 'lucide-react';
+import React from "react";
+import {
+  LayoutGrid,
+  Plus,
+  Moon,
+  Sun,
+  ChevronLeft,
+  ChevronRight,
+  Folder,
+  FileText,
+  Bell,
+  Trash2,
+  Edit2,
+  LayoutDashboard,
+  Palette,
+  Eye,
+} from "lucide-react";
 
 interface SidebarProps {
   collapsed: boolean;
-  theme: 'dark' | 'light';
+  theme: "dark" | "light";
   boards: { id: string; name: string }[];
   folders?: any[]; // Recursive folders
   activeBoardId: string;
@@ -27,7 +42,7 @@ interface SidebarProps {
   hasBackground?: boolean;
 }
 
-import { Search } from 'lucide-react';
+import { Search } from "lucide-react";
 
 export function Sidebar({
   collapsed,
@@ -57,14 +72,18 @@ export function Sidebar({
   return (
     <aside
       className={`
-        border-r flex flex-col flex-shrink-0 
+        shadow-lg flex flex-col flex-shrink-0 
         transition-all duration-300 ease-in-out h-full z-[60]
-        ${collapsed ? 'w-[72px] p-2' : 'w-[260px] p-6'}
-        ${hasBackground ? 'glass !rounded-none !border-l-0 !border-y-0 !shadow-none' : 'bg-bg-sidebar border-border-card'}
+        ${collapsed ? "w-[72px] p-2" : "w-[260px] p-6"}
+        ${hasBackground ? "glass !rounded-none !border-l-0 !border-y-0 !shadow-none" : "bg-bg-sidebar border-border-card"}
       `}
     >
-      <div className={`flex items-center justify-between mb-8 ${collapsed ? 'flex-col gap-4 justify-center mb-6' : ''}`}>
-        <div className={`flex items-center gap-3 overflow-hidden ${collapsed ? 'w-full justify-center gap-0' : ''}`}>
+      <div
+        className={`flex items-center justify-between mb-8 ${collapsed ? "flex-col gap-4 justify-center mb-6" : ""}`}
+      >
+        <div
+          className={`flex items-center gap-3 overflow-hidden ${collapsed ? "w-full justify-center gap-0" : ""}`}
+        >
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 via-red-500 to-yellow-500 flex items-center justify-center flex-shrink-0 text-white shadow-lg shadow-accent/10">
             <LayoutGrid size={20} strokeWidth={2.5} />
           </div>
@@ -76,7 +95,7 @@ export function Sidebar({
         </div>
         <button
           onClick={onToggleSidebar}
-          className={`p-1.5 rounded-lg text-text-secondary hover:bg-border-card hover:text-text-primary transition-all ${collapsed ? 'mx-auto mt-2' : ''}`}
+          className={`p-1.5 rounded-lg text-text-secondary hover:bg-border-card hover:text-text-primary transition-all ${collapsed ? "mx-auto mt-2" : ""}`}
           title="Toggle Sidebar"
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
@@ -86,9 +105,9 @@ export function Sidebar({
       {!collapsed && onSearch && (
         <div className="mb-6 px-1 animate-in fade-in slide-in-from-left-2 duration-300">
           <div className="relative group">
-            <Search 
-              size={16} 
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors" 
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors"
             />
             <input
               type="text"
@@ -106,11 +125,11 @@ export function Sidebar({
             onClick={onSelectDashboard}
             className={`
               flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-all w-full
-              ${collapsed ? 'justify-center p-2.5' : ''}
+              ${collapsed ? "justify-center p-2.5" : ""}
               ${
-                activeSidebarItem === 'dashboard'
-                  ? 'bg-border-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                activeSidebarItem === "dashboard"
+                  ? "bg-border-card text-text-primary shadow-sm"
+                  : "text-text-secondary hover:bg-border-card hover:text-text-primary"
               }
             `}
             title="Dashboard"
@@ -120,14 +139,14 @@ export function Sidebar({
           </button>
 
           <button
-            onClick={() => onSelectBoard('1')}
+            onClick={() => onSelectBoard("1")}
             className={`
               flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-all w-full
-              ${collapsed ? 'justify-center p-2.5' : ''}
+              ${collapsed ? "justify-center p-2.5" : ""}
               ${
-                activeSidebarItem === 'bookmarks' && activeBoardId === '1'
-                  ? 'bg-border-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                activeSidebarItem === "bookmarks" && activeBoardId === "1"
+                  ? "bg-border-card text-text-primary shadow-sm"
+                  : "text-text-secondary hover:bg-border-card hover:text-text-primary"
               }
             `}
             title="Bookmarks"
@@ -135,25 +154,34 @@ export function Sidebar({
             <Folder size={18} className="flex-shrink-0" />
             {!collapsed && <span className="transition-colors">Bookmarks</span>}
           </button>
-          
+
           {/* <div className={`text-[10px] uppercase font-bold text-text-secondary/60 mb-2 px-3 mt-4 tracking-widest ${!collapsed ? '' : 'hidden'}`}>Library</div> */}
           {boards.map((board) => (
-            <div key={board.id} className="group relative flex items-center gap-0.5">
+            <div
+              key={board.id}
+              className="group relative flex items-center gap-0.5"
+            >
               <button
                 onClick={() => onSelectBoard(board.id)}
                 className={`
                     flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
-                    ${collapsed ? 'justify-center p-2.5' : ''}
+                    ${collapsed ? "justify-center p-2.5" : ""}
                     ${
-                    activeSidebarItem === 'bookmarks' && activeBoardId === board.id && (activeTabId === 'tabs' || !activeTabId)
-                        ? 'bg-border-card text-text-primary shadow-sm'
-                        : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                      activeSidebarItem === "bookmarks" &&
+                      activeBoardId === board.id &&
+                      (activeTabId === "tabs" || !activeTabId)
+                        ? "bg-border-card text-text-primary shadow-sm"
+                        : "text-text-secondary hover:bg-border-card hover:text-text-primary"
                     }
                 `}
                 title={board.name}
               >
                 <Folder size={18} className="flex-shrink-0" />
-                {!collapsed && <span className="truncate flex-1 text-left">{board.name}</span>}
+                {!collapsed && (
+                  <span className="truncate flex-1 text-left">
+                    {board.name}
+                  </span>
+                )}
               </button>
             </div>
           ))}
@@ -162,11 +190,11 @@ export function Sidebar({
             onClick={onSelectNotes}
             className={`
               flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-all w-full
-              ${collapsed ? 'justify-center p-2.5' : ''}
+              ${collapsed ? "justify-center p-2.5" : ""}
               ${
-                activeSidebarItem === 'notes'
-                  ? 'bg-border-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                activeSidebarItem === "notes"
+                  ? "bg-border-card text-text-primary shadow-sm"
+                  : "text-text-secondary hover:bg-border-card hover:text-text-primary"
               }
             `}
             title="Notes"
@@ -179,11 +207,11 @@ export function Sidebar({
             onClick={onSelectReminders}
             className={`
               flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-all w-full
-              ${collapsed ? 'justify-center p-2.5' : ''}
+              ${collapsed ? "justify-center p-2.5" : ""}
               ${
-                activeSidebarItem === 'reminders'
-                  ? 'bg-border-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                activeSidebarItem === "reminders"
+                  ? "bg-border-card text-text-primary shadow-sm"
+                  : "text-text-secondary hover:bg-border-card hover:text-text-primary"
               }
             `}
             title="Reminders"
@@ -196,11 +224,11 @@ export function Sidebar({
             onClick={onSelectWatchlist}
             className={`
               flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-all w-full
-              ${collapsed ? 'justify-center p-2.5' : ''}
+              ${collapsed ? "justify-center p-2.5" : ""}
               ${
-                activeSidebarItem === 'watchlist'
-                  ? 'bg-border-card text-text-primary shadow-sm'
-                  : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+                activeSidebarItem === "watchlist"
+                  ? "bg-border-card text-text-primary shadow-sm"
+                  : "text-text-secondary hover:bg-border-card hover:text-text-primary"
               }
             `}
             title="Watch List"
@@ -217,7 +245,7 @@ export function Sidebar({
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
             text-text-secondary hover:bg-border-card hover:text-text-primary
-            ${collapsed ? 'justify-center p-2.5' : ''}
+            ${collapsed ? "justify-center p-2.5" : ""}
           `}
           title="Create Board"
         >
@@ -229,11 +257,11 @@ export function Sidebar({
           onClick={onSelectSpace}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
-            ${collapsed ? 'justify-center p-2.5' : ''}
+            ${collapsed ? "justify-center p-2.5" : ""}
             ${
-              activeSidebarItem === 'spaces'
-                ? 'bg-border-card text-text-primary shadow-sm'
-                : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+              activeSidebarItem === "spaces"
+                ? "bg-border-card text-text-primary shadow-sm"
+                : "text-text-secondary hover:bg-border-card hover:text-text-primary"
             }
           `}
           title="Spaces"
@@ -248,11 +276,11 @@ export function Sidebar({
           onClick={onSelectCustomize}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full
-            ${collapsed ? 'justify-center p-2.5' : ''}
+            ${collapsed ? "justify-center p-2.5" : ""}
             ${
-              activeSidebarItem === 'customize'
-                ? 'bg-border-card text-text-primary shadow-sm'
-                : 'text-text-secondary hover:bg-border-card hover:text-text-primary'
+              activeSidebarItem === "customize"
+                ? "bg-border-card text-text-primary shadow-sm"
+                : "text-text-secondary hover:bg-border-card hover:text-text-primary"
             }
           `}
           title="Customize"

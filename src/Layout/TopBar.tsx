@@ -63,7 +63,7 @@ interface TopBarProps {
                     if (val) window.open(`https://www.google.com/search?q=${encodeURIComponent(val)}`, '_blank');
                   }
                 }}
-                className="w-full h-[46px] pl-11 pr-14 bg-bg-card border border-border-card rounded-2xl text-[14px] text-text-primary placeholder:text-text-secondary/60 outline-none focus:border-accent/40 focus:bg-accent/5 transition-all shadow-sm"
+                className="w-full h-[46px] pl-11 pr-14 bg-bg-card border border-border-card rounded-lg text-[14px] text-text-primary placeholder:text-text-secondary/60 outline-none focus:border-accent/40 focus:bg-accent/5 transition-all shadow-sm"
               />
   
               {/* Google Search Button (Icon)
@@ -99,7 +99,7 @@ interface TopBarProps {
             <div className="flex items-center gap-2 mr-2">
               <button
                 onClick={() => onCreate("bookmark")}
-                className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-text-secondary hover:text-text-primary group shadow-sm"
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-text-secondary hover:text-text-primary group shadow-sm"
                 title="Add Bookmark"
               >
                 <Plus
@@ -113,7 +113,7 @@ interface TopBarProps {
   
               <button
                 onClick={() => onCreate("folder")}
-                className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-text-secondary hover:text-text-primary group shadow-sm"
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-text-secondary hover:text-text-primary group shadow-sm"
                 title="New Folder"
               >
                 <Folder
@@ -127,7 +127,7 @@ interface TopBarProps {
   
               <button
                 onClick={onAddReminder}
-                className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-text-secondary hover:text-text-primary group shadow-sm"
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-text-secondary hover:text-text-primary group shadow-sm"
                 title="Add Reminder"
               >
                 <Bell
@@ -146,7 +146,7 @@ interface TopBarProps {
             {/* View Mode Toggle (Grid vs Tabs) */}
             {/* <button
               onClick={onViewValues}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-text-secondary hover:text-text-primary group shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-bg-card border border-border-card hover:border-accent/40 hover:bg-accent/5 transition-all text-text-secondary hover:text-text-primary group shadow-sm"
             >
               {viewMode === "feed" ? <Grid size={18} className="text-accent" /> : <Layout size={18} className="text-accent" />}
               <span className="text-[12px] text-accent font-bold uppercase tracking-widest hidden sm:inline">

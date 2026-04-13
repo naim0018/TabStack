@@ -7,6 +7,7 @@ interface DashboardLayoutProps {
   topbar: React.ReactNode;
   children: React.ReactNode;
   sidebarRight?: React.ReactNode;
+  bottomDock?: React.ReactNode;
 }
 
 export function DashboardLayout({
@@ -15,6 +16,7 @@ export function DashboardLayout({
   topbar,
   children,
   sidebarRight,
+  bottomDock,
 }: DashboardLayoutProps) {
   return (
     <div
@@ -22,12 +24,13 @@ export function DashboardLayout({
       data-theme={settings.theme}
     >
       {/* Background Color Layer (with Brightness) */}
-      <div 
+      <div
         className="absolute inset-0 z-0 bg-bg transition-all duration-300 ease-in-out"
         style={{
-          filter: settings.textBrightness && settings.textBrightness !== 100 
-            ? `brightness(${settings.textBrightness / 100})` 
-            : 'none'
+          filter:
+            settings.textBrightness && settings.textBrightness !== 100
+              ? `brightness(${settings.textBrightness / 100})`
+              : "none",
         }}
       />
 
@@ -47,10 +50,10 @@ export function DashboardLayout({
       {/* Main Container */}
       <div className="relative z-10 flex h-full w-full">
         {sidebar}
-        
+
         <main className="flex-1 flex flex-col min-w-0 relative bg-transparent">
           {topbar}
-          
+
           <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
             <div className=" mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-start">
@@ -70,6 +73,10 @@ export function DashboardLayout({
           </div>
         </main>
       </div>
+
+      {/* Bottom Dock */}
+      {bottomDock}
     </div>
   );
 }
+
