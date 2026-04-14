@@ -37,7 +37,7 @@ export function DashboardLayout({
       />
 
       {/* Background Image Layer (with Blur & Brightness) */}
-      {settings.backgroundImage && (
+      {settings.backgroundType === "image" && settings.backgroundImage && (
         <img
           src={settings.backgroundImage}
           className="absolute inset-0 z-0 w-full h-full object-cover transition-all duration-300 ease-out pointer-events-none"
@@ -46,6 +46,28 @@ export function DashboardLayout({
             filter: `blur(${settings.backgroundBlur || 0}px) brightness(${settings.textBrightness ? settings.textBrightness / 100 : 1})`,
           }}
           alt=""
+        />
+      )}
+
+      {/* Solid Color Background */}
+      {settings.backgroundType === "solid" && (
+        <div
+          className="absolute inset-0 z-0 transition-colors duration-300"
+          style={{
+            backgroundColor: settings.backgroundColor || "#1a1c23",
+            opacity: (settings.backgroundOpacity || 100) / 100,
+          }}
+        />
+      )}
+
+      {/* Gradient Background */}
+      {settings.backgroundType === "gradient" && (
+        <div
+          className="absolute inset-0 z-0 transition-all duration-300"
+          style={{
+            background: settings.backgroundGradient || "linear-gradient(to bottom right, #4f46e5, #9333ea)",
+            opacity: (settings.backgroundOpacity || 100) / 100,
+          }}
         />
       )}
 

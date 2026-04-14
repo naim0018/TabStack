@@ -9,7 +9,9 @@ export interface Settings {
   collapsedSections: string[];
   clockMode: "analog" | "digital";
   gridMode?: "horizontal" | "vertical";
+  backgroundType?: "image" | "solid" | "gradient";
   backgroundImage?: string;
+  backgroundGradient?: string;
   backgroundOpacity?: number;
   backgroundBlur?: number;
   cardOpacity?: number;
@@ -30,7 +32,9 @@ export const DEFAULT_SETTINGS: Settings = {
   boards: [],
   collapsedSections: [],
   viewMode: "feed",
+  backgroundType: "image",
   backgroundImage: "",
+  backgroundGradient: "linear-gradient(to bottom right, #4f46e5, #9333ea)",
   backgroundOpacity: 50,
   backgroundBlur: 0,
   cardOpacity: 60,
