@@ -4,7 +4,8 @@ import { Settings } from "@/types";
 interface DashboardLayoutProps {
   settings: Settings;
   sidebar: React.ReactNode;
-  topbar: React.ReactNode;
+  topbar?: React.ReactNode;
+  topbarRight?: React.ReactNode;
   children: React.ReactNode;
   sidebarRight?: React.ReactNode;
   bottomDock?: React.ReactNode;
@@ -14,6 +15,7 @@ export function DashboardLayout({
   settings,
   sidebar,
   topbar,
+  topbarRight,
   children,
   sidebarRight,
   bottomDock,
@@ -51,11 +53,9 @@ export function DashboardLayout({
       <div className="relative z-10 flex h-full w-full">
         {sidebar}
 
-        <main className="flex-1 flex flex-col min-w-0 relative bg-transparent">
-          {topbar}
-
-          <div className="flex-1 overflow-y-auto p-4 scroll-smooth">
-            <div className=" mx-auto">
+        <main className="flex-1 flex flex-col min-w-0 relative bg-transparent overflow-y-auto no-scrollbar scroll-smooth">
+          <div className="p-4 md:p-8">
+            <div className="max-w-[1720px] mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-start">
                 {/* Main Content View */}
                 <div className="col-span-4 flex flex-col min-w-0">
@@ -63,11 +63,10 @@ export function DashboardLayout({
                 </div>
 
                 {/* Right Sidebar / Widget Area */}
-                {sidebarRight && (
-                  <aside className="col-span-1 flex flex-col gap-6 sticky h-fit max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar">
-                    {sidebarRight}
-                  </aside>
-                )}
+                <aside className="col-span-1 flex flex-col gap-6 sticky h-fit max-h-screen">
+                  {topbarRight}
+                  {sidebarRight}
+                </aside>
               </div>
             </div>
           </div>

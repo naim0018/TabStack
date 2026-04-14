@@ -162,16 +162,11 @@ const App = () => {
             tabStackFolderId={tabStackFolderId || undefined}
           />
         }
-        topbar={
+        topbarRight={
           <TopBar
             onSearch={setSearchQuery}
             hasBackground={!!settings.backgroundImage}
-            onViewValues={() =>
-              setSettings((s) => ({
-                ...s,
-                viewMode: s.viewMode === "feed" ? "tabs" : "feed",
-              }))
-            }
+            onViewValues={() => {}}
             viewMode={settings.viewMode}
             onCreate={(type) => {
               setModalForceType(type);
@@ -184,6 +179,8 @@ const App = () => {
               setIsModalOpen(true);
             }}
             tabCount={tabs.length}
+            showSearch={false}
+            showLogo={false}
           />
         }
         sidebarRight={
