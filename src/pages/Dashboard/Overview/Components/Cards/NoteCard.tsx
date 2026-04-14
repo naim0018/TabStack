@@ -1,5 +1,6 @@
 import React from "react";
 import { FileText, Edit2, Trash2, Download } from "lucide-react";
+import { GlassContainer } from "@/components/ui/GlassContainer";
 
 interface NoteCardProps {
   item: any;
@@ -79,11 +80,11 @@ export function NoteCard({
     );
   }
   return (
-    <div
+    <GlassContainer
       onClick={onClick}
       onDragStart={onDragStart}
       draggable={item.id !== undefined}
-      className="w-full glass group relative p-4 rounded-2xl border transition-all duration-300 backdrop-blur-md overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5 bg-bg-card border-border-card hover:border-accent min-h-[160px]"
+      className="w-full group relative p-4 !rounded-2xl transition-all duration-300 overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/5 bg-bg-card border-border-card hover:border-accent min-h-[160px]"
     >
       <div className="flex items-start gap-3 w-full relative z-10">
         <div className="w-9 h-9 border border-border-card rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 bg-accent/10 text-accent">
@@ -150,6 +151,6 @@ export function NoteCard({
           <Trash2 size={12} />
         </button>
       </div>
-    </div>
+    </GlassContainer>
   );
 }
