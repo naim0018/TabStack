@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 
 /* Chrome, Edge, Safari */
@@ -25,7 +24,7 @@ body {
     --accent-glow: rgba(56, 189, 248, 0.12);
     --danger: #f43f5e;
     --success: #10b981;
-    --card-border: rgba(255, 255, 255, 0.08);
+    --card-border: rgba(255, 255, 255, 0.12);
     --scrollbar-track: transparent;
     --scrollbar-thumb: rgba(148, 163, 184, 0.15);
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
@@ -33,7 +32,7 @@ body {
   }
 
   [data-theme="light"] {
-    --card-border: rgba(15, 23, 42, 0.08);
+    --card-border: #e5e7eb; /* gray-200 */
     --accent: #0284c7;
     --accent-glow: rgba(2, 132, 199, 0.12);
     --danger: #e11d48;
@@ -50,20 +49,30 @@ body {
   }
 
   :root {
-    --text-secondary: #94a3b8;
+    --text-secondary: var(--text-primary);
   }
 
   body {
-    @apply bg-bg text-text-primary h-screen overflow-hidden transition-colors duration-300;
+    @apply bg-bg h-screen overflow-hidden transition-colors duration-300;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--text-primary);
+  }
+
+  /* Base text color — elements inherit from body; use explicit Tailwind classes to override */
+  a {
+    color: inherit;
   }
 
   /* Force global blur override for common utility classes to respect the slider */
-  .backdrop-blur-md, .backdrop-blur-2xl, .backdrop-blur-xl, .backdrop-blur-lg {
-    backdrop-filter: blur(var(--card-blur, 16px)) !important;
-    -webkit-backdrop-filter: blur(var(--card-blur, 16px)) !important;
-  }
+/* Override Tailwind's internal backdrop variable */
+.backdrop-blur-sm,
+.backdrop-blur-md,
+.backdrop-blur-lg,
+.backdrop-blur-xl,
+.backdrop-blur-2xl {
+  --tw-backdrop-blur: blur(var(--card-blur, 16px)) !important;
 }
+
 
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
@@ -74,13 +83,13 @@ body {
     scrollbar-width: none;
   }
   
-  /* Glassmorphism Effect - uses live --card-bg and --card-blur */
+  /* Glassmorphism Effect with solid border */
   .glass {
     background-color: var(--card-bg) !important;
     backdrop-filter: blur(var(--card-blur, 16px)) !important;
     -webkit-backdrop-filter: blur(var(--card-blur, 16px)) !important;
-    border: 1px solid var(--card-border);
-    box-shadow: var(--shadow-md);
+    border: 1px solid var(--card-border) !important;
+    box-shadow: var(--shadow-sm), 0 8px 32px 0 rgba(0, 0, 0, 0.2);
   }
 
   /* Custom Hover Effects */
@@ -93,17 +102,33 @@ body {
     border-color: var(--accent);
   }
 
-  .glass-dock {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+  .animate-spin-slow {
+    animation: spin 3s linear infinite;
   }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+.glass-dock {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(var(--card-blur, 16px));
+  -webkit-backdrop-filter: blur(var(--card-blur, 16px)) ;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
 
   [data-theme="light"] .glass-dock {
     background: rgba(255, 255, 255, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  }
+  .slider-accent {
+    @apply w-full h-2 bg-white/5 rounded-full appearance-none cursor-pointer accent-accent outline-none transition-all;
   }
 }
 
@@ -111,4 +136,5 @@ body {
 img, svg {
   filter: brightness(calc(1 / var(--app-brightness, 1)));
   will-change: filter;
+}
 }

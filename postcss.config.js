@@ -4,7 +4,7 @@ const require = createRequire(import.meta.url);
 
 export default {
   plugins: {
-    tailwindcss: {},
+    '@tailwindcss/postcss': {},
     autoprefixer: {},
   },
 }
