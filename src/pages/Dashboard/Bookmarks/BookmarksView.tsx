@@ -2,7 +2,6 @@ import React, { useRef, useState, useEffect, useMemo } from "react";
 import { SectionList } from "@/common/SectionList";
 import { Settings } from "@/types";
 import {
-  Folder,
   LayoutList,
   Columns,
   ChevronLeft,
@@ -13,7 +12,6 @@ import {
 import { chromeApi } from "@/utils/chrome";
 import {
   DndContext,
-  closestCorners,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -67,9 +65,9 @@ const dropAnimation: DropAnimation = {
 };
 
 // Unique ID helpers
-const getUniqueId = (item: any, isTab: boolean) => {
-  return isTab ? `tab-${item.id}` : `node-${item.id}`;
-};
+// const getUniqueId = (item: any, isTab: boolean) => {
+//   return isTab ? `tab-${item.id}` : `node-${item.id}`;
+// };
 
 const parseUniqueId = (uniqueId: string) => {
   if (uniqueId.startsWith("tab-"))
@@ -88,7 +86,7 @@ export function BookmarksView({
   settings,
   tabs,
   flatFolders,
-  looseBookmarks,
+  // looseBookmarks,
   searchQuery,
   now,
   draggingId: propDraggingId,
@@ -99,7 +97,7 @@ export function BookmarksView({
   onItemEdit,
   onItemDelete,
   onTabClose,
-  onCreateBookmark,
+  // onCreateBookmark,
   onToggleViewMode,
   onToggleAllSections,
 }: BookmarksViewProps) {

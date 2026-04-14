@@ -24,7 +24,7 @@ body {
     --accent-glow: rgba(56, 189, 248, 0.12);
     --danger: #f43f5e;
     --success: #10b981;
-    --card-border: rgba(255, 255, 255, 0.08);
+    --card-border: rgba(255, 255, 255, 0.12);
     --scrollbar-track: transparent;
     --scrollbar-thumb: rgba(148, 163, 184, 0.15);
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
@@ -32,7 +32,7 @@ body {
   }
 
   [data-theme="light"] {
-    --card-border: rgba(15, 23, 42, 0.08);
+    --card-border: #e5e7eb; /* gray-200 */
     --accent: #0284c7;
     --accent-glow: rgba(2, 132, 199, 0.12);
     --danger: #e11d48;
@@ -83,13 +83,13 @@ body {
     scrollbar-width: none;
   }
   
-  /* Glassmorphism Effect - uses live --card-bg and --card-blur */
+  /* Glassmorphism Effect with solid border */
   .glass {
     background-color: var(--card-bg) !important;
     backdrop-filter: blur(var(--card-blur, 16px)) !important;
     -webkit-backdrop-filter: blur(var(--card-blur, 16px)) !important;
-    border: 1px solid var(--card-border);
-    box-shadow: var(--shadow-md);
+    border: 1px solid var(--card-border) !important;
+    box-shadow: var(--shadow-sm), 0 8px 32px 0 rgba(0, 0, 0, 0.2);
   }
 
   /* Custom Hover Effects */

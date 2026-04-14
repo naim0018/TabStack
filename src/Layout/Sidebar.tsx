@@ -1,16 +1,12 @@
-import React from "react";
+
 import {
   LayoutGrid,
   Plus,
-  Moon,
-  Sun,
   ChevronLeft,
   ChevronRight,
-  Folder,
+  Bookmark,
   FileText,
   Bell,
-  Trash2,
-  Edit2,
   LayoutDashboard,
   Palette,
   Eye,
@@ -46,16 +42,16 @@ import { Search } from "lucide-react";
 
 export function Sidebar({
   collapsed,
-  theme,
+  // theme,
   boards,
-  folders = [],
+  // folders = [],
   activeBoardId,
   activeTabId,
   activeSidebarItem,
   onToggleSidebar,
-  onToggleTheme,
+  // onToggleTheme,
   onSelectBoard,
-  onSelectFolder,
+  // onSelectFolder,
   onSelectNotes,
   onSelectReminders,
   onSelectSpace,
@@ -63,10 +59,10 @@ export function Sidebar({
   onSelectWatchlist,
   onSelectCustomize,
   onCreateBoard,
-  onEditBoard,
-  onDeleteBoard,
+  // onEditBoard,
+  // onDeleteBoard,
   onSearch,
-  tabStackFolderId,
+  // tabStackFolderId,
   hasBackground,
 }: SidebarProps) {
   return (
@@ -84,9 +80,9 @@ export function Sidebar({
         <div
           className={`flex items-center gap-3 overflow-hidden ${collapsed ? "w-full justify-center gap-0" : ""}`}
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 via-red-500 to-yellow-500 flex items-center justify-center flex-shrink-0 text-white shadow-lg shadow-accent/10">
-            <LayoutGrid size={20} strokeWidth={2.5} />
-          </div>
+          {/* <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-500 via-red-500 to-yellow-500 flex items-center justify-center flex-shrink-0 text-white shadow-lg shadow-accent/10">
+            <Library size={20} strokeWidth={2.5} />
+          </div> */}
           {!collapsed && (
             <h1 className="text-xl font-black whitespace-nowrap tracking-tight transition-opacity duration-200 bg-gradient-to-r from-text-primary to-text-secondary bg-clip-text text-transparent">
               TabStack
@@ -151,7 +147,7 @@ export function Sidebar({
             `}
             title="Bookmarks"
           >
-            <Folder size={18} className="flex-shrink-0" />
+            <Bookmark size={18} className="flex-shrink-0" />
             {!collapsed && <span className="transition-colors">Bookmarks</span>}
           </button>
 
@@ -176,7 +172,7 @@ export function Sidebar({
                 `}
                 title={board.name}
               >
-                <Folder size={18} className="flex-shrink-0" />
+                <Bookmark size={18} className="flex-shrink-0" />
                 {!collapsed && (
                   <span className="truncate flex-1 text-left">
                     {board.name}
