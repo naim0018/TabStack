@@ -4,36 +4,40 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: ['class', '[data-theme="dark"]'], // Support data-theme attribute
   theme: {
     extend: {
       colors: {
-        bg: {
-          DEFAULT: 'var(--bg-color)',
-          sidebar: 'var(--sidebar-bg)',
-          card: 'var(--card-bg)',
-          header: 'var(--header-bg)',
-        },
-        border: {
-          card: 'var(--card-border)',
-        },
-        text: {
-          primary: 'var(--text-primary)',
-          secondary: 'var(--text-secondary)',
-        },
-        accent: {
-          DEFAULT: 'var(--accent)',
-          glow: 'var(--accent-glow)',
-        },
+        bg: 'var(--bg-color)',
+        'text-primary': 'var(--text-primary)',
+        'text-secondary': 'var(--text-secondary)',
+        'bg-card': 'var(--card-bg)',
+        'border-card': 'var(--card-border)',
+        accent: 'var(--accent)',
+        'accent-glow': 'var(--accent-glow)',
         danger: 'var(--danger)',
         success: 'var(--success)',
       },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+      borderRadius: {
+        'xl': '12px',
+        '2xl': '16px',
+        '3xl': '24px',
       },
-      boxShadow: {
-        sm: 'var(--shadow-sm)',
-        md: 'var(--shadow-md)',
+      animation: {
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'slide-in': 'slideIn 0.3s ease-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideIn: {
+          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+      },
+      backdropBlur: {
+        'md': 'var(--card-blur, 16px)',
       }
     },
   },
