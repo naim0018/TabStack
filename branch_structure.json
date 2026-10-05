@@ -1,0 +1,21 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "main",
+    "naim",
+    "origin",
+    "reminder"
+  ],
+  "parent": {
+    "main": null,
+    "naim": "main",
+    "origin": "main",
+    "reminder": "main"
+  },
+  "order": [
+    "main",
+    "naim",
+    "origin",
+    "reminder"
+  ]
+}
